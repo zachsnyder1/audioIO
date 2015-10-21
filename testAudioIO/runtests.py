@@ -15,14 +15,15 @@ class AutomateTesting:
 	testScriptsDir = '/testScripts/'
 	testLogDir = '/testLogs/'
 	makeTestDataDir = '/makeTestData/'
+	testDataDir = '/testData/'
 	makeScriptPrefix = 'make'
 	runpyRunName = "__main__"
 	
 	def __init__(self, logName=''):
-		self.testLoader = unittest.TestLoader()
-		self.testSuite = self.testLoader.discover(os.path.dirname(os.path.abspath(__file__)) + self.testScriptsDir)
 		self.set_log_file_path(logName)
 		self.make_test_data()
+		self.testLoader = unittest.TestLoader()
+		self.testSuite = self.testLoader.discover(os.path.dirname(os.path.abspath(__file__)) + self.testScriptsDir)
 	
 	def run_tests(self):
 		"""
@@ -44,6 +45,13 @@ class AutomateTesting:
 		automated testing based on parameters in the corresponding .csv
 		file.  The audio files are stored in the test/testdata directory.
 		"""
+		# make testData dir if necessary
+		testDataPath = os.path.normpath(os.path.dirname(os.path.abspath(__file__)) + self.testDataDir)
+		if not os.path.isdir(testDataPath):
+			os.mkdir(testDataPath)
+		else:
+			pass
+		# next make test data
 		makeTestDataDirPath = os.path.dirname(os.path.abspath(__file__)) + self.makeTestDataDir
 		for file in os.listdir(makeTestDataDirPath):
 			if file.startswith(self.makeScriptPrefix):

@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+import time
 PACKAGE_ROOT = '../..'
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), 
 	os.path.expanduser(__file__))))
@@ -8,17 +9,18 @@ PACKAGE_PATH = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_ROOT))
 sys.path.append(PACKAGE_PATH)
 from audioIO.engine import audioIOEngine as aIOe
 
+# Set a read file for testing
 TEST_DATA_DIR = os.path.normpath(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/testData/')
-for file in os.listdir(TEST_DATA_DIR):
-	if os.path.isfile(os.path.abspath(file)):
-		TEST_READ_FILE = os.path.normpath(os.path.abspath(file))
-	else:
-		continue
+TEST_READ_FILE = TEST_DATA_DIR + '/test_read_file.txt'
+
 
 class ReadAudioInitTestMethods(unittest.TestCase):
 	"""
 	Methods to test the initialization of a ReadAudio object.
 	"""
+	def setUp(self):
+		with open(TEST_READ_FILE, 'wb') as writeStream:
+			writeStream.write(bytearray(1))
 	
 	def test_init(self):
 		readAudioObj = aIOe.ReadAudio(TEST_READ_FILE)
