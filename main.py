@@ -1,24 +1,30 @@
 """
-A place for trying things out, performing manual testing, etc.
+A place for trying things out, performing exploratory testing, etc.
 """
 
 import os
 import sys
-import datetime
+import time
 from sys import argv
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.abspath(__file__)))
 sys.path.append(SCRIPT_DIR)
-from audioIO.engine import audioIOEngine as aIOe
-from audioIO.engine import wavIOEngine as wIOe
+from audioIO.plugins import plugin
+from audioIO.io import wavIO as wIO
 
 if __name__ == '__main__':
 
-	def cb(processorObject, sampleNestedList):
-		print('\nDATA: {}\n\n'.format(sampleNestedList))
+	def cb(pIObj, sampleNestedList):
+		for block in range(len(sampleNestedList)):
+			for channel in range(len(sampleNestedList[block])):
+				sampleNestedList[block][channel] += \
+					pIObj.reach_back(44100, block, channel) * 0.35
 		return sampleNestedList
 	
-	readObj = wIOe.ReadWav(argv[1])
-	writeObj = wIOe.WriteWav(argv[2])
-	processor = aIOe.AudioIOEngine(readObj, writeObj, cb)
+	readObj = wIO.ReadWav(argv[1])
+	writeObj = wIO.WriteWav(argv[2], format='PCM', bitDepth=16)
+	processor = plugin.Plugin(readObj, writeObj, cb, format='float', 
+							reachBack=44100)
 	processor.process()
+	endTime = time.clock()
+	print("ELAPSED TIME: {}".format(endTime))

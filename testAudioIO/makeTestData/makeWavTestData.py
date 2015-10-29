@@ -11,7 +11,7 @@ class CreateTestFile:
 	
 	def __init__(self, testDataDir, argList):
 		self.testDataDir = testDataDir
-		self.testFileName = 'WAVE_' + argList[0]
+		self.testFileName = argList[0]
 		self.chunkID = argList[1]
 		self.chunkSize = argList[2]
 		self.waveID = argList[3]
@@ -79,12 +79,12 @@ class CreateTestFile:
 			if int(self.audioFormat) == 3:
 				if int(self.bitsPerSample) == 32:
 					for sample in self.data:
-						self.writeStream.write(struct.pack('<f', int(sample)/1))
+						self.writeStream.write(struct.pack('<f', float(sample)))
 				elif int(self.bitsPerSample) == 24:
 					pass
 				elif int(self.bitsPerSample) == 64:
 					for sample in self.data:
-						self.writeStream.write(struct.pack('<d', int(sample)/1))
+						self.writeStream.write(struct.pack('<d', float(sample)))
 			elif int(self.audioFormat) == 1:
 				for sample in self.data:
 					if self.bitsPerSample == '8':

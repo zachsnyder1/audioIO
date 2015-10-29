@@ -23,7 +23,9 @@ class AutomateTesting:
 		self.set_log_file_path(logName)
 		self.make_test_data()
 		self.testLoader = unittest.TestLoader()
-		self.testSuite = self.testLoader.discover(os.path.dirname(os.path.abspath(__file__)) + self.testScriptsDir)
+		self.testSuite = self.testLoader.discover(os.path.dirname(
+												  os.path.abspath(__file__)) + 
+												  self.testScriptsDir)
 	
 	def run_tests(self):
 		"""
@@ -46,16 +48,22 @@ class AutomateTesting:
 		file.  The audio files are stored in the test/testdata directory.
 		"""
 		# make testData dir if necessary
-		testDataPath = os.path.normpath(os.path.dirname(os.path.abspath(__file__)) + self.testDataDir)
+		testDataPath = os.path.normpath(
+						os.path.dirname(
+						os.path.abspath(__file__)) + self.testDataDir)
 		if not os.path.isdir(testDataPath):
 			os.mkdir(testDataPath)
 		else:
-			pass
+			for file in os.listdir(testDataPath):
+				os.remove(os.path.join(testDataPath, file))
 		# next make test data
-		makeTestDataDirPath = os.path.dirname(os.path.abspath(__file__)) + self.makeTestDataDir
+		makeTestDataDirPath = os.path.dirname(
+								os.path.abspath(__file__)) + \
+								self.makeTestDataDir
 		for file in os.listdir(makeTestDataDirPath):
 			if file.startswith(self.makeScriptPrefix):
-				runpy.run_path(makeTestDataDirPath + file, run_name=self.runpyRunName)
+				runpy.run_path(makeTestDataDirPath + file, 
+								run_name=self.runpyRunName)
 			else:
 				pass
 	
@@ -64,8 +72,10 @@ class AutomateTesting:
 		Set the self.logFilePath based on logName.  First checks to see
 		that the log directory exists; if not, makes it.
 		"""
-		logFileName = strftime("%Y-%m-%d_%H-%M-%S", gmtime()) + logName + '.txt'
-		logDirPath = os.path.dirname(os.path.abspath(__file__)) + self.testLogDir
+		logFileName = strftime("%Y-%m-%d_%H-%M-%S", gmtime()) + \
+						logName + '.txt'
+		logDirPath = os.path.dirname(os.path.abspath(__file__)) + \
+						self.testLogDir
 		if not os.path.isdir(logDirPath):
 			os.mkdir(logDirPath)
 		else:

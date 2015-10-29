@@ -6,10 +6,15 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(),
 	os.path.expanduser(__file__))))
 PACKAGE_PATH = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_ROOT))
 sys.path.append(PACKAGE_PATH)
-from audioIO.engine import audioIOEngine as aIOe
+from audioIO.io import audioIO as aIO
 
-TEST_DATA_DIR = os.path.normpath(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/testData/')
-TEST_WRITE_FILE = os.path.normpath(os.path.abspath(os.path.join(TEST_DATA_DIR, 'test_write_audio_file.txt')))
+TEST_DATA_DIR = os.path.normpath(
+					os.path.dirname(
+					os.path.dirname(
+					os.path.abspath(__file__))) + '/testData/')
+TEST_WRITE_FILE = os.path.normpath(
+					os.path.abspath(
+					os.path.join(TEST_DATA_DIR, 'test_write_audio_file.txt')))
 
 
 
@@ -17,9 +22,33 @@ class WriteAudioInitTestMethods(unittest.TestCase):
 	"""
 	Methods to test the initialization of a WriteAudio object.
 	"""
-	def test_init(self):
-		writeAudioObj = aIOe.WriteAudio(TEST_WRITE_FILE)
-		self.assertIsInstance(writeAudioObj, aIOe.WriteAudio)
+	def test_init_no_conversion_params(self):
+		"""
+		Basic init, no conversion params.
+		"""
+		writeObj = aIO.WriteAudio(TEST_WRITE_FILE)
+		self.assertIsInstance(writeObj, aIO.WriteAudio)
+		self.assertEqual(writeObj.conversion, False)
+		self.assertEqual(writeObj.conversionParameters, {})
+	
+	def test_init_all_valid_conversion_params(self):
+		"""
+		Basic init, all conversion parameters are set to valid values.
+		"""
+		writeObj = aIO.WriteAudio(TEST_WRITE_FILE, format='PCM', 
+									numChannels=2, 
+									bitDepth=16, 
+									sampleRate=44100)
+		self.assertIsInstance(writeObj, aIO.WriteAudio)
+		self.assertEqual(writeObj.conversion, True)
+		self.assertEqual(writeObj.conversionParameters, {
+			aIO.WriteAudio.keyAudioFormatStr: 'PCM',
+			aIO.WriteAudio.keyNumChannels: 2,
+			aIO.WriteAudio.keyBitDepth: 16,
+			aIO.WriteAudio.keyByteDepth: 2,
+			aIO.WriteAudio.keySampleRate: 44100
+		})
+		
 
 
 class PackAndWriteTestMethods(unittest.TestCase):
@@ -27,7 +56,7 @@ class PackAndWriteTestMethods(unittest.TestCase):
 	Methods to test the WriteAudio.pack_and_write() funciton.
 	"""
 	def setUp(self):
-		self.writeAudioObj = aIOe.WriteAudio(TEST_WRITE_FILE)
+		self.writeObj = aIO.WriteAudio(TEST_WRITE_FILE)
 	
 	def tearDown(self):
 		pass
@@ -53,26 +82,28 @@ class PackAndWriteTestMethods(unittest.TestCase):
 		for parameterList in paramNestedList:
 			with self.subTest(utf_str = parameterList):
 				# set headerDict['test']
-				self.writeAudioObj.headerDict['test'] = parameterList[0]
+				self.writeObj.headerDict['test'] = parameterList[0]
 				# handle endianness
 				if parameterList[1] == 'little':
-					packStr = self.writeAudioObj.packLittleUTF
+					packStr = self.writeObj.packLittleUTF
 				elif parameterList[1] == 'big':
-					packStr = self.writeAudioObj.packBigUTF
+					packStr = self.writeObj.packBigUTF
 				# write utf to file
 				with open(TEST_WRITE_FILE, 'wb') as writeStream:
 					writeStream.truncate()
-					self.writeAudioObj.pack_and_write(writeStream, (
+					self.writeObj.pack_and_write(writeStream, (
 						(packStr, 'test', len(parameterList[0])),
 					))
 				# read utf
 				binary = bytearray()
 				with open(TEST_WRITE_FILE, 'rb') as readStream:
 					binary += readStream.read(len(parameterList[0]))
-				if packStr == self.writeAudioObj.packBigUTF:
-					self.assertEqual(self.writeAudioObj.headerDict['test'], binary.decode('utf-8'))
-				elif packStr == self.writeAudioObj.packLittleUTF:
-					self.assertEqual(self.writeAudioObj.headerDict['test'], binary.decode('utf-8')[::-1])
+				if packStr == self.writeObj.packBigUTF:
+					self.assertEqual(self.writeObj.headerDict['test'], 
+									 binary.decode('utf-8'))
+				elif packStr == self.writeObj.packLittleUTF:
+					self.assertEqual(self.writeObj.headerDict['test'], 
+									 binary.decode('utf-8')[::-1])
 					
 	def test_pack_and_write_int(self):
 		"""
@@ -97,20 +128,22 @@ class PackAndWriteTestMethods(unittest.TestCase):
 		for parameterList in paramNestedList:
 			with self.subTest(numBytes_byteorder_signed = parameterList):
 				# set headerDict['test']
-				self.writeAudioObj.headerDict['test'] = int((2**((parameterList[0]*8) - 1)) - 1)
+				self.writeObj.headerDict['test'] = \
+					int((2**((parameterList[0]*8) - 1)) - 1)
 				# handle endianness
 				if parameterList[1] == 'little' and parameterList[2] == True:
-					packStr = self.writeAudioObj.packLittleINT
-				elif parameterList[1] == 'little' and parameterList[2] == False:
-					packStr = self.writeAudioObj.packLittleUINT
+					packStr = self.writeObj.packLittleINT
+				elif parameterList[1] == 'little' and \
+					parameterList[2] == False:
+					packStr = self.writeObj.packLittleUINT
 				elif parameterList[1] == 'big' and parameterList[2] == True:
-					packStr = self.writeAudioObj.packBigINT
+					packStr = self.writeObj.packBigINT
 				elif parameterList[1] == 'big' and parameterList[2] == False:
-					packStr = self.writeAudioObj.packBigUINT
+					packStr = self.writeObj.packBigUINT
 				# write utf to file
 				with open(TEST_WRITE_FILE, 'wb') as writeStream:
 					writeStream.truncate()
-					self.writeAudioObj.pack_and_write(writeStream, (
+					self.writeObj.pack_and_write(writeStream, (
 						(packStr, 'test', parameterList[0]),
 					))
 				# read int
@@ -118,14 +151,26 @@ class PackAndWriteTestMethods(unittest.TestCase):
 				with open(TEST_WRITE_FILE, 'rb') as readStream:
 					binary += readStream.read(parameterList[0])
 				# assert
-				if packStr == self.writeAudioObj.packLittleINT:
-					self.assertEqual(self.writeAudioObj.headerDict['test'], int.from_bytes(binary, byteorder='little', signed=True))
-				elif packStr == self.writeAudioObj.packLittleUINT:
-					self.assertEqual(self.writeAudioObj.headerDict['test'], int.from_bytes(binary, byteorder='little', signed=False))
-				elif packStr == self.writeAudioObj.packBigINT:
-					self.assertEqual(self.writeAudioObj.headerDict['test'], int.from_bytes(binary, byteorder='big', signed=True))
-				elif packStr == self.writeAudioObj.packBigUINT:
-					self.assertEqual(self.writeAudioObj.headerDict['test'], int.from_bytes(binary, byteorder='big', signed=False))
+				if packStr == self.writeObj.packLittleINT:
+					self.assertEqual(self.writeObj.headerDict['test'], 
+									 int.from_bytes(binary, 
+									 				byteorder='little', 
+									 				signed=True))
+				elif packStr == self.writeObj.packLittleUINT:
+					self.assertEqual(self.writeObj.headerDict['test'], 
+									 int.from_bytes(binary, 
+									 				byteorder='little', 
+									 				signed=False))
+				elif packStr == self.writeObj.packBigINT:
+					self.assertEqual(self.writeObj.headerDict['test'], 
+									 int.from_bytes(binary, 
+									 				byteorder='big', 
+									 				signed=True))
+				elif packStr == self.writeObj.packBigUINT:
+					self.assertEqual(self.writeObj.headerDict['test'], 
+									 int.from_bytes(binary, 
+									 				byteorder='big', 
+									 				signed=False))
 
 	def test_pack_multiple(self):
 		"""
@@ -162,9 +207,10 @@ class PackAndWriteTestMethods(unittest.TestCase):
 		for i in range(len(paramNestedList)):
 			key = 'key' + str(i)
 			if isinstance(paramNestedList[i][0], int):
-				self.writeAudioObj.headerDict[key] = int(2**((paramNestedList[i][0] * 8) - 1) - 1)
+				self.writeObj.headerDict[key] = \
+					int(2**((paramNestedList[i][0] * 8) - 1) - 1)
 			elif isinstance(paramNestedList[i][0], str):
-				self.writeAudioObj.headerDict[key] = paramNestedList[i][0]
+				self.writeObj.headerDict[key] = paramNestedList[i][0]
 			else:
 				raise
 			keyList.append(key)
@@ -179,29 +225,39 @@ class PackAndWriteTestMethods(unittest.TestCase):
 					leng = paramNestedList[i][0]
 					integer = int(2**((paramNestedList[i][0] * 8) - 1) - 1)
 					# handle pack string
-					if paramNestedList[i][1] == 'little' and paramNestedList[i][2] == True:
-						tupleList.append((self.writeAudioObj.packLittleINT, keyList[i], leng))
-					elif paramNestedList[i][1] == 'little' and paramNestedList[i][2] == False:
-						tupleList.append((self.writeAudioObj.packLittleUINT, keyList[i], leng))
-					elif paramNestedList[i][1] == 'big' and paramNestedList[i][2] == True:
-						tupleList.append((self.writeAudioObj.packBigINT, keyList[i], leng))
-					elif paramNestedList[i][1] == 'big' and paramNestedList[i][2] == False:
-						tupleList.append((self.writeAudioObj.packBigUINT, keyList[i], leng))
+					if paramNestedList[i][1] == 'little' and \
+						paramNestedList[i][2] == True:
+						tupleList.append((self.writeObj.packLittleINT, 
+										  keyList[i], leng))
+					elif paramNestedList[i][1] == 'little' and \
+						paramNestedList[i][2] == False:
+						tupleList.append((self.writeObj.packLittleUINT, 
+										  keyList[i], leng))
+					elif paramNestedList[i][1] == 'big' and \
+						paramNestedList[i][2] == True:
+						tupleList.append((self.writeObj.packBigINT, 
+										  keyList[i], leng))
+					elif paramNestedList[i][1] == 'big' and \
+						paramNestedList[i][2] == False:
+						tupleList.append((self.writeObj.packBigUINT, 
+										  keyList[i], leng))
 					else:
 						raise
 				elif isinstance(paramNestedList[i][0], str):
 					leng = len(paramNestedList[i][0])
 					# handle endianness
 					if paramNestedList[i][1] == 'little':
-						tupleList.append((self.writeAudioObj.packLittleUTF, keyList[i]))
+						tupleList.append((self.writeObj.packLittleUTF, 
+										  keyList[i]))
 					elif paramNestedList[i][1] == 'big':
-						tupleList.append((self.writeAudioObj.packBigUTF, keyList[i]))
+						tupleList.append((self.writeObj.packBigUTF, 
+										  keyList[i]))
 					else:
 						raise
 				else:
 					raise
 			nestedTuple = (tupleList[:])
-			self.writeAudioObj.pack_and_write(writeStream, nestedTuple)	
+			self.writeObj.pack_and_write(writeStream, nestedTuple)	
 		# Read and test
 		with open(TEST_WRITE_FILE, 'rb') as readStream:
 			for i in range(len(paramNestedList)):
@@ -209,9 +265,12 @@ class PackAndWriteTestMethods(unittest.TestCase):
 					leng = 0
 					if isinstance(paramNestedList[i][0], int):
 						leng = paramNestedList[i][0]
-						originalValue = int(2**((paramNestedList[i][0] * 8) - 1) - 1)
+						originalValue = \
+							int(2**((paramNestedList[i][0] * 8) - 1) - 1)
 						binary = readStream.read(leng)
-						readValue = int.from_bytes(binary, byteorder=paramNestedList[i][1], signed=paramNestedList[i][2])
+						readValue = int.from_bytes(binary, 
+											byteorder=paramNestedList[i][1], 
+											signed=paramNestedList[i][2])
 						self.assertEqual(originalValue, readValue)
 					elif isinstance(paramNestedList[i][0], str):
 						leng = len(paramNestedList[i][0])
