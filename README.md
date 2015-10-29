@@ -60,7 +60,7 @@ Here's the gist:
 		<dd>Reads and stores the header info from <i>targetFile</i> for use during processing by<br>
 			a plugin.Plugin() object.
 		</dd>
-	<dt><i>class</i> wavIO.<b>WriteWav</b>(<i>targetFile</i>, <i>format=None</i>, <i>numChannels=None</i>, <i>bitDepth=None</i>, <i>sampleRate=None</i>)</dt>
+	<dt><i>class</i> wavIO.<b>WriteWav</b>(<i>targetFile</i>, <i>format=None</i>, <i>numChannels=None</i>, <i>bitDepth=None</i>, <br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<i>sampleRate=None</i>)</dt>
 		<dd>Initializes and stores the header info for <i>targetFile</i> for use during processing<br>
 			by a plugin.Plugin() object.  To apply a conversion to the format of the audio<br>
 			file during processing, optional initialization arguments are set.<br><br>
@@ -96,7 +96,7 @@ Here's the gist:
 			&nbsp&nbsp&nbsp&nbspReads the input file data, passes it through the algorithm callback function,<br>
 			&nbsp&nbsp&nbsp&nbspand writes the processed audio to the output file.<br><br>
 	
-			<b><i>.reach_back<(numSamples, currBlock, currChannel)</i></b><br>
+			<b><i>.reach_back(numSamples, currBlock, currChannel)</i></b><br>
 			&nbsp&nbsp&nbsp&nbspCan be called within the algorithm callback function in order to reference<br>
 			&nbsp&nbsp&nbsp&nbspthe value of a sample of the same channel (<i>currChannel</i>) that occurred<br>
 			&nbsp&nbsp&nbsp&nbsp<i>numSamples</i> samples previously to a sample at <i>currBlock</i> index in the<br>
