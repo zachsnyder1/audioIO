@@ -22,7 +22,7 @@ if __name__ == '__main__':
 		return sampleNestedList
 	
 	readObj = wIO.ReadWav(argv[1])
-	writeObj = wIO.WriteWav(argv[2], format='PCM', bitDepth=16)
+	writeObj = wIO.WriteWav(argv[2], format='cool', bitDepth=24)
 	processor = plugin.Plugin(readObj, writeObj, cb, format='float', 
 							reachBack=44100)
 	processor.process()

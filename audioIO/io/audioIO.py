@@ -49,7 +49,7 @@ class AudioIOBase:
 	formatStringFloat = 'float'
 	formatStringPCM = 'PCM'
 	# Core headerDict keys
-	keyAudioFormatStr = 'audioFormatStr'
+	keyAudioFmtStr = 'audioFormatStr'
 	keySigned = 'signed'
 	keyNumChannels = 'numChannels'
 	keyBitDepth = 'bitDepth'
@@ -377,7 +377,7 @@ class WriteAudio(AudioIOBase):
 		self.conversionParameters = {}
 		self.conversion = False
 		if format:
-			self.conversionParameters[self.keyAudioFormatStr] = format
+			self.conversionParameters[self.keyAudioFmtStr] = format
 		if numChannels:
 			self.conversionParameters[self.keyNumChannels] = int(numChannels)
 		if bitDepth:

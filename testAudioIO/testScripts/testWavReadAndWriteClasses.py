@@ -46,7 +46,7 @@ class WavIOEngineInitTestMethods(unittest.TestCase):
 		self.assertIsInstance(writeAudioObj, wIO.WriteWav)
 		self.assertEqual(writeAudioObj.conversion, True)
 		self.assertEqual(writeAudioObj.conversionParameters, {
-			wIO.WriteWav.keyAudioFormatStr: 'PCM',
+			wIO.WriteWav.keyAudioFmtStr: 'PCM',
 			wIO.WriteWav.keyNumChannels: 2,
 			wIO.WriteWav.keyBitDepth: 16,
 			wIO.WriteWav.keyByteDepth: 2,
@@ -91,7 +91,7 @@ class WavInitHeaderTestMethods(unittest.TestCase):
 			writeAudioObj.keyStructMultiplier: '',
 			writeAudioObj.keyStructFmtChar: 'h',
 			writeAudioObj.keySigned: True,
-			writeAudioObj.keyAudioFormatStr: 'PCM'
+			writeAudioObj.keyAudioFmtStr: 'PCM'
 		})
 	
 	def test_valid_conversion_parameters_float(self):
@@ -130,7 +130,7 @@ class WavInitHeaderTestMethods(unittest.TestCase):
 			writeAudioObj.keyStructMultiplier: '',
 			writeAudioObj.keyStructFmtChar: 'f',
 			writeAudioObj.keySigned: True,
-			writeAudioObj.keyAudioFormatStr: 'float'
+			writeAudioObj.keyAudioFmtStr: 'float'
 		})
 
 

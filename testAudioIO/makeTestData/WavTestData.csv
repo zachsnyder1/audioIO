@@ -1,5 +1,4 @@
 #------------------ CREATES .WAV FILES WITH TEST HEADER AND DATA ------------------#
-WAVE_PCM_2CH_44100SR_32BIT.wav;RIFF;84;WAVE;fmt ;16;1;2;44100;352800;8;32;None;None;None;None;None;None;None;data;48;0,0,1,1,2,2,3,3,4,4,5,5,0,5,1,4,2,3,3,2,4,1,5,0
 #WAVE_PCM_2CH_44100SR_24BIT.wav;RIFF;72;WAVE;fmt ;16;1;2;44100;264600;6;24;None;None;None;None;None;None;None;data;36;0,0,1,1,2,2,3,3,4,4,5,5,0,5,1,4,2,3,3,2,4,1,5,0
 WAVE_PCM_2CH_44100SR_16BIT.wav;RIFF;60;WAVE;fmt ;16;1;2;44100;176400;4;16;None;None;None;None;None;None;None;data;24;0,0,1,1,2,2,3,3,4,4,5,5,0,5,1,4,2,3,3,2,4,1,5,0
 WAVE_PCM_2CH_44100SR_8BIT.wav;RIFF;48;WAVE;fmt ;16;1;2;44100;88200;2;8;None;None;None;None;None;None;None;data;12;0,0,1,1,2,2,3,3,4,4,5,5,0,5,1,4,2,3,3,2,4,1,5,0

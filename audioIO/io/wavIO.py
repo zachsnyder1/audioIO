@@ -73,26 +73,30 @@ class WavBase:
 		format string.  Called at the end of read_header() override.
 		"""
 		self.headerDict[self.keyStructMultiplier] = '' # initialize for later
+		# Supported formats:
 		if self.headerDict[self.keyAudioFmt] == self.wavFmtPCM and \
 			self.headerDict[self.keyByteDepth] == self.int8Size:
 			self.headerDict[self.keyStructFmtChar] = 'B'
 		elif self.headerDict[self.keyAudioFmt] == self.wavFmtPCM and \
 			self.headerDict[self.keyByteDepth] == self.int16Size:
 			self.headerDict[self.keyStructFmtChar] = 'h'
-		elif self.headerDict[self.keyAudioFmt] == self.wavFmtPCM and \
-			self.headerDict[self.keyByteDepth] == self.int24Size:
-			raise aIO.IncompatibleAudioFormat('24 bit wav not supported')
-		elif self.headerDict[self.keyAudioFmt] == self.wavFmtPCM and \
-			self.headerDict[self.keyByteDepth] == self.int32Size:
-			self.headerDict[self.keyStructFmtChar] = 'i'
 		elif self.headerDict[self.keyAudioFmt] == self.wavFmtFloat and \
 			self.headerDict[self.keyByteDepth] == self.floatSize:
 			self.headerDict[self.keyStructFmtChar] = 'f'
 		elif self.headerDict[self.keyAudioFmt] == self.wavFmtFloat and \
 			self.headerDict[self.keyByteDepth] == self.doubleSize:
 			self.headerDict[self.keyStructFmtChar] = 'd'
+		# Else: raise IncompatibleAudioFormat with format description
 		else:
-			raise aIO.IncompatibleAudioFormat
+			try:
+				fmtStr = self.headerDict[self.keyAudioFmtStr]
+			except KeyError:
+				fmtStr = 'unknown'
+			exStr = "{} format not supported: {}-bit {}"
+			fmtdExStr = exStr.format(self.targetFile, 
+								   self.headerDict[self.keyBitDepth],
+								   fmtStr)
+			raise aIO.IncompatibleAudioFormat(fmtdExStr)
 			
 	def struct_fmt_str(self):
 		"""
@@ -175,11 +179,11 @@ class ReadWav(aIO.ReadAudio, WavBase):
 			(self.assignLittleUINT, self.keySubFormat, self.subformatSize),
 			(self.assignDIRECT, self.keyByteDepth, 
 			lambda: int(self.headerDict[self.keyBitDepth] / self.byteSize))))
-		# set core key self.keyAudioFormatStr
+		# set core key self.keyAudioFmtStr
 		if self.headerDict[self.keyAudioFmt] == self.wavFmtPCM:
-			self.headerDict[self.keyAudioFormatStr] = self.formatStringPCM
+			self.headerDict[self.keyAudioFmtStr] = self.formatStringPCM
 		elif self.headerDict[self.keyAudioFmt] == self.wavFmtFloat:
-			self.headerDict[self.keyAudioFormatStr] = self.formatStringFloat
+			self.headerDict[self.keyAudioFmtStr] = self.formatStringFloat
 		# set core key self.keySigned
 		if self.headerDict[self.keyAudioFmt] == self.wavFmtPCM and \
 			self.headerDict[self.keyByteDepth] == self.int8Size:
@@ -277,7 +281,7 @@ class WriteWav(aIO.WriteAudio, WavBase):
 		if self.conversion or (not isinstance(readObj, ReadWav)):
 			# Populate core headerDict{} info based on conversion parameters
 			for key, value in self.conversionParameters.items():
-				if key == self.keyAudioFormatStr:
+				if key == self.keyAudioFmtStr:
 					if value == self.formatStringFloat:
 						self.headerDict[self.keyAudioFmt] = \
 							self.wavFmtFloat
@@ -290,7 +294,7 @@ class WriteWav(aIO.WriteAudio, WavBase):
 			# Fill in the remaining core headerDict{} info
 			# based on readObj.headerDict{}
 			coreKeys = [
-				self.keyAudioFormatStr, 
+				self.keyAudioFmtStr, 
 				self.keyNumChannels, 
 				self.keyBitDepth, 
 				self.keyByteDepth, 
@@ -299,17 +303,17 @@ class WriteWav(aIO.WriteAudio, WavBase):
 			]
 			for key in coreKeys:
 				try:
-					if key == self.keyAudioFormatStr:
+					if key == self.keyAudioFmtStr:
 						self.headerDict[self.keyAudioFmt]
 					else:
 						self.headerDict[key]
 				except KeyError:
-					if key == self.keyAudioFormatStr:
-						if readObj.headerDict[self.keyAudioFormatStr] == \
+					if key == self.keyAudioFmtStr:
+						if readObj.headerDict[self.keyAudioFmtStr] == \
 							self.formatStringFloat:
 							self.headerDict[self.keyAudioFmt] = \
 								self.wavFmtFloat
-						elif readObj.headerDict[self.keyAudioFormatStr] == \
+						elif readObj.headerDict[self.keyAudioFmtStr] == \
 							self.formatStringPCM:
 							self.headerDict[self.keyAudioFmt] = \
 								self.wavFmtPCM

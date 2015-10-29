@@ -42,7 +42,7 @@ class WriteAudioInitTestMethods(unittest.TestCase):
 		self.assertIsInstance(writeObj, aIO.WriteAudio)
 		self.assertEqual(writeObj.conversion, True)
 		self.assertEqual(writeObj.conversionParameters, {
-			aIO.WriteAudio.keyAudioFormatStr: 'PCM',
+			aIO.WriteAudio.keyAudioFmtStr: 'PCM',
 			aIO.WriteAudio.keyNumChannels: 2,
 			aIO.WriteAudio.keyBitDepth: 16,
 			aIO.WriteAudio.keyByteDepth: 2,

@@ -55,8 +55,8 @@ class Plugin:
 			self.readObj.read_header(readStream)
 		self.writeObj.init_header(self.readObj, self.reachBack)
 		# for quick, clean access in the algorithm_wrapper_closure() function:
-		readFormat = self.readObj.headerDict[self.readObj.keyAudioFormatStr]
-		writeFormat = self.writeObj.headerDict[self.writeObj.keyAudioFormatStr]
+		readFormat = self.readObj.headerDict[self.readObj.keyAudioFmtStr]
+		writeFormat = self.writeObj.headerDict[self.writeObj.keyAudioFmtStr]
 		readBitDepth = self.readObj.headerDict[self.readObj.keyBitDepth]
 		writeBitDepth = self.writeObj.headerDict[self.writeObj.keyBitDepth]
 		readSigned = self.readObj.headerDict[self.readObj.keySigned]
@@ -123,7 +123,7 @@ class Plugin:
 		else:
 			# For calculations
 			readFormat = \
-				self.readObj.headerDict[self.readObj.keyAudioFormatStr]
+				self.readObj.headerDict[self.readObj.keyAudioFmtStr]
 			readBitDepth = self.readObj.headerDict[self.readObj.keyBitDepth]
 			readSigned = self.readObj.headerDict[self.readObj.keySigned]
 			# Set correct zero (float, PCM signed, PCM unsigned)
