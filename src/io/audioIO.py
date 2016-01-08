@@ -97,7 +97,7 @@ class ReadAudio(AudioIOBase):
 	1) read_header(self, readStream)
 	2) unpack(self)
 	
-	These methods are used by a Plugin object in its process() method.
+	These methods are used by a Engine object in its process() method.
 	"""
 	def __init__(self, targetFile):
 		"""
@@ -123,7 +123,7 @@ class ReadAudio(AudioIOBase):
 	# ------------------------------------------------------------------------
 	def read_header(self, readStream):
 		"""
-		Called in Plugin().process() to populate the headerDict{} with
+		Called in Engine().process() to populate the headerDict{} with
 		values read from the header of the read file.  Must be overridden by
 		the inheriting class.
 		
@@ -135,7 +135,7 @@ class ReadAudio(AudioIOBase):
 	
 	def unpack(self, byteArray):
 		"""
-		Called in Plugin().process() to unpack the buffer binary in a way
+		Called in Engine().process() to unpack the buffer binary in a way
 		that is relevant to the file type.  Must be overridden by inheriting 
 		file type class.
 		
@@ -343,7 +343,7 @@ class WriteAudio(AudioIOBase):
 	1) write_header(self, readStream)
 	2) repack(self)
 	
-	These methods are used by a Plugin object in its process() method.
+	These methods are used by a Engine object in its process() method.
 	"""
 	def __init__(self, targetFile, format=None, numChannels=None, 
 					bitDepth=None, sampleRate=None):
@@ -401,7 +401,7 @@ class WriteAudio(AudioIOBase):
 		"""
 		If no file conversion, simply copy header from readObj.  Else, 
 		populate based on conversion parameters, as well as readObj and 
-		pluginObj.  Must be overridden by inheriting file-type  write
+		engineObj.  Must be overridden by inheriting file-type  write
 		class.
 		
 		Accepts:
@@ -427,7 +427,7 @@ class WriteAudio(AudioIOBase):
 	
 	def repack(self, processedSampleNestedList):
 		"""
-		Called in Plugin().process() to unpack the buffer binary in a way 
+		Called in Engine().process() to unpack the buffer binary in a way 
 		that is relevant to the file type.  Must be overridden by
 		inheriting file-type write class.
 		

@@ -257,9 +257,10 @@ class ReadWav(aIO.ReadAudio, WavBase):
 
 class WriteWav(aIO.WriteAudio, WavBase):
 	"""
-	WAV file writer inherits from both WriteAudio and WavBase.
-	It overrides the WriteAudio.read_header() and WriteAudio.unpack()
-	methods that are called in the AudioIOEngine.process() method.
+	WAV file writer class inherits from both WriteAudio and WavBase.  It 
+	overrides the WriteAudio.init_header(), WriteAudio.write_header(), and 
+	WriteAudio.repack() methods that are called in the AudioIOEngine.process() 
+	method.
 	"""
 	# ------------------------------------------------------------------------
 	# -------------------------------- OVERRIDES -----------------------------

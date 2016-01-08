@@ -7,8 +7,8 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(),
 	os.path.expanduser(__file__))))
 PACKAGE_PATH = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_ROOT))
 sys.path.append(PACKAGE_PATH)
-from audioIO.io import wavIO as wIO
-from audioIO.plugins import plugin
+from src.io import wavIO as wIO
+from src.engine import engine
 
 TEST_DATA_DIR = os.path.normpath(
 					os.path.dirname(
@@ -20,9 +20,9 @@ TEST_WRITE_FILE = os.path.normpath(
 
 
 
-class PluginInitTestMethods(unittest.TestCase):
+class EngineInitTestMethods(unittest.TestCase):
 	"""
-	Methods to test the initialization of an Plugin object.
+	Methods to test the initialization of an Engine object.
 	"""
 	def setUp(self):
 		self.testReadFile = None
@@ -46,11 +46,11 @@ class PluginInitTestMethods(unittest.TestCase):
 		"""
 		readAudioObj = wIO.ReadWav(self.testReadFile)
 		writeAudioObj = wIO.WriteWav(TEST_WRITE_FILE)
-		pluginObj = plugin.Plugin(readAudioObj, writeAudioObj, self.plugin_cb)
-		self.assertIsInstance(pluginObj, plugin.Plugin)
+		engineObj = engine.Engine(readAudioObj, writeAudioObj, self.plugin_cb)
+		self.assertIsInstance(engineObj, engine.Engine)
 
 
-class PluginConversionTestMethods(unittest.TestCase):
+class EngineConversionTestMethods(unittest.TestCase):
 	"""
 	Methods to test the conversion of files during processing.
 	"""
@@ -94,8 +94,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 		# paramList[6]  ==>  The assertion to perform (testing the write data)
 		paramNest = [
 			[
-				'PLUGIN_PCM_2CH_44100SR_16BIT.wav', 
-				'PLUGIN_PCM16_to_FLOAT32.wav',
+				'ENGINE_PCM_2CH_44100SR_16BIT.wav', 
+				'ENGINE_PCM16_to_FLOAT32.wav',
 				'float',
 				32,
 				'PCM',
@@ -103,8 +103,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_float_cb
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_16BIT.wav', 
-				'PLUGIN_PCM16_to_FLOAT32.wav',
+				'ENGINE_PCM_2CH_44100SR_16BIT.wav', 
+				'ENGINE_PCM16_to_FLOAT32.wav',
 				'float',
 				32,
 				'float',
@@ -112,8 +112,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_float_cb
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_16BIT.wav', 
-				'PLUGIN_PCM16_to_FLOAT64.wav',
+				'ENGINE_PCM_2CH_44100SR_16BIT.wav', 
+				'ENGINE_PCM16_to_FLOAT64.wav',
 				'float',
 				64,
 				'PCM',
@@ -121,8 +121,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_float_cb
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_16BIT.wav', 
-				'PLUGIN_PCM16_to_FLOAT64.wav',
+				'ENGINE_PCM_2CH_44100SR_16BIT.wav', 
+				'ENGINE_PCM16_to_FLOAT64.wav',
 				'float',
 				64,
 				'float',
@@ -130,8 +130,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_float_cb
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_16BIT.wav', 
-				'PLUGIN_PCM16_to_PCM8.wav',
+				'ENGINE_PCM_2CH_44100SR_16BIT.wav', 
+				'ENGINE_PCM16_to_PCM8.wav',
 				'PCM',
 				8,
 				'PCM',
@@ -139,8 +139,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_int_cb
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_16BIT.wav', 
-				'PLUGIN_PCM16_to_PCM8.wav',
+				'ENGINE_PCM_2CH_44100SR_16BIT.wav', 
+				'ENGINE_PCM16_to_PCM8.wav',
 				'PCM',
 				8,
 				'float',
@@ -148,8 +148,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_int_cb
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_8BIT.wav', 
-				'PLUGIN_PCM8_to_FLOAT32.wav',
+				'ENGINE_PCM_2CH_44100SR_8BIT.wav', 
+				'ENGINE_PCM8_to_FLOAT32.wav',
 				'float',
 				32,
 				'PCM',
@@ -157,8 +157,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_float_cb
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_8BIT.wav', 
-				'PLUGIN_PCM8_to_FLOAT32.wav',
+				'ENGINE_PCM_2CH_44100SR_8BIT.wav', 
+				'ENGINE_PCM8_to_FLOAT32.wav',
 				'float',
 				32,
 				'float',
@@ -166,8 +166,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_float_cb
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_8BIT.wav', 
-				'PLUGIN_PCM8_to_FLOAT64.wav',
+				'ENGINE_PCM_2CH_44100SR_8BIT.wav', 
+				'ENGINE_PCM8_to_FLOAT64.wav',
 				'float',
 				64,
 				'PCM',
@@ -175,8 +175,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_float_cb
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_8BIT.wav', 
-				'PLUGIN_PCM8_to_FLOAT64.wav',
+				'ENGINE_PCM_2CH_44100SR_8BIT.wav', 
+				'ENGINE_PCM8_to_FLOAT64.wav',
 				'float',
 				64,
 				'float',
@@ -184,8 +184,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_float_cb
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_8BIT.wav', 
-				'PLUGIN_PCM8_to_PCM16.wav',
+				'ENGINE_PCM_2CH_44100SR_8BIT.wav', 
+				'ENGINE_PCM8_to_PCM16.wav',
 				'PCM',
 				16,
 				'PCM',
@@ -193,8 +193,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_int_cb
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_8BIT.wav', 
-				'PLUGIN_PCM8_to_PCM16.wav',
+				'ENGINE_PCM_2CH_44100SR_8BIT.wav', 
+				'ENGINE_PCM8_to_PCM16.wav',
 				'PCM',
 				16,
 				'float',
@@ -202,8 +202,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_int_cb
 			],
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_32BIT.wav',
-				'PLUGINT_FLOAT32_to_PCM16.wav',
+				'ENGINE_FLOAT_2CH_44100SR_32BIT.wav',
+				'ENGINE_FLOAT32_to_PCM16.wav',
 				'PCM',
 				16,
 				'float',
@@ -211,8 +211,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_int_cb
 			],
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_32BIT.wav',
-				'PLUGINT_FLOAT32_to_PCM16.wav',
+				'ENGINE_FLOAT_2CH_44100SR_32BIT.wav',
+				'ENGINE_FLOAT32_to_PCM16.wav',
 				'PCM',
 				16,
 				'PCM',
@@ -220,8 +220,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_int_cb
 			],
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_32BIT.wav',
-				'PLUGINT_FLOAT32_to_PCM8.wav',
+				'ENGINE_FLOAT_2CH_44100SR_32BIT.wav',
+				'ENGINE_FLOAT32_to_PCM8.wav',
 				'PCM',
 				8,
 				'float',
@@ -229,8 +229,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_int_cb
 			],
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_32BIT.wav',
-				'PLUGINT_FLOAT32_to_PCM8.wav',
+				'ENGINE_FLOAT_2CH_44100SR_32BIT.wav',
+				'ENGINE_FLOAT32_to_PCM8.wav',
 				'PCM',
 				8,
 				'PCM',
@@ -238,8 +238,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_int_cb
 			],
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_64BIT.wav',
-				'PLUGINT_FLOAT64_to_PCM16.wav',
+				'ENGINE_FLOAT_2CH_44100SR_64BIT.wav',
+				'ENGINE_FLOAT64_to_PCM16.wav',
 				'PCM',
 				16,
 				'float',
@@ -247,8 +247,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_int_cb
 			],
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_64BIT.wav',
-				'PLUGINT_FLOAT64_to_PCM16.wav',
+				'ENGINE_FLOAT_2CH_44100SR_64BIT.wav',
+				'ENGINE_FLOAT64_to_PCM16.wav',
 				'PCM',
 				16,
 				'PCM',
@@ -256,8 +256,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_int_cb
 			],
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_64BIT.wav',
-				'PLUGINT_FLOAT64_to_PCM8.wav',
+				'ENGINE_FLOAT_2CH_44100SR_64BIT.wav',
+				'ENGINE_FLOAT64_to_PCM8.wav',
 				'PCM',
 				8,
 				'float',
@@ -265,8 +265,8 @@ class PluginConversionTestMethods(unittest.TestCase):
 				self.assert_int_cb
 			],
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_64BIT.wav',
-				'PLUGINT_FLOAT64_to_PCM8.wav',
+				'ENGINE_FLOAT_2CH_44100SR_64BIT.wav',
+				'ENGINE_FLOAT64_to_PCM8.wav',
 				'PCM',
 				8,
 				'PCM',
@@ -285,21 +285,21 @@ class PluginConversionTestMethods(unittest.TestCase):
 				writeAudioObj = wIO.WriteWav(writeFile, 
 												format=paramList[2], 
 												bitDepth=paramList[3])
-				pluginObj = plugin.Plugin(readAudioObj, writeAudioObj, 
+				engineObj = engine.Engine(readAudioObj, writeAudioObj, 
 									  paramList[5], format=paramList[4])
-				pluginObj.process()
+				engineObj.process()
 				# Test the wrapper function
 				readAudioObj = wIO.ReadWav(writeFile)
 				writeAudioObj = wIO.WriteWav(postTestFile)
-				pluginObj = plugin.Plugin(readAudioObj, writeAudioObj, 
+				engineObj = engine.Engine(readAudioObj, writeAudioObj, 
 										paramList[6])
-				pluginObj.process()
+				engineObj.process()
 		
 		
 		
 class FloatPcmConversionsTestMethods(unittest.TestCase):
 	"""
-	Methods to test the Plugin helper methods that convert a nested array
+	Methods to test the Engine helper methods that convert a nested array
 	of data between float and PCM.
 	"""
 	def plugin_cb(self, engineObj, sampleNestedList):
@@ -319,7 +319,7 @@ class FloatPcmConversionsTestMethods(unittest.TestCase):
 			pass
 		readAudioObj = wIO.ReadWav(self.testReadFile)
 		writeAudioObj = wIO.WriteWav(TEST_WRITE_FILE)
-		self.pluginObj = plugin.Plugin(readAudioObj, writeAudioObj, 
+		self.engineObj = engine.Engine(readAudioObj, writeAudioObj, 
 									self.plugin_cb)
 	
 	def test_float_to_pcm(self):
@@ -353,7 +353,7 @@ class FloatPcmConversionsTestMethods(unittest.TestCase):
 			]
 		]
 		for paramList in paramNest:
-			converted = self.pluginObj.float_to_pcm(paramList[0], 
+			converted = self.engineObj.float_to_pcm(paramList[0], 
 													paramList[1], 
 													paramList[2])
 			for i in range(len(converted)):
@@ -393,7 +393,7 @@ class FloatPcmConversionsTestMethods(unittest.TestCase):
 			]
 		]
 		for paramList in paramNest:
-			converted = self.pluginObj.pcm_to_float(paramList[0], 
+			converted = self.engineObj.pcm_to_float(paramList[0], 
 													paramList[1], 
 													paramList[2])
 			for i in range(len(converted)):
@@ -406,7 +406,7 @@ class FloatPcmConversionsTestMethods(unittest.TestCase):
 	
 class ClipTestMethods(unittest.TestCase):
 	"""
-	Methods to test the Plugin.clip_float() and Plugin.clip_pcm()
+	Methods to test the Engine.clip_float() and Engine.clip_pcm()
 	functions.
 	"""
 	def plugin_cb(self, engineObj, sampleNestedList):
@@ -426,12 +426,12 @@ class ClipTestMethods(unittest.TestCase):
 			pass
 		readAudioObj = wIO.ReadWav(self.testReadFile)
 		writeAudioObj = wIO.WriteWav(TEST_WRITE_FILE)
-		self.pluginObj = plugin.Plugin(readAudioObj, writeAudioObj, 
+		self.engineObj = engine.Engine(readAudioObj, writeAudioObj, 
 									self.plugin_cb)
 	
 	def test_clip_float(self):
 		"""
-		Test that Plugin.clip_float() properly clips a nested list
+		Test that Engine.clip_float() properly clips a nested list
 		of float values.
 		"""
 		nest = [
@@ -450,12 +450,12 @@ class ClipTestMethods(unittest.TestCase):
 			[-0.5, 0.5],
 			[0.0, 0.0]
 		]
-		clippedNest = self.pluginObj.clip_float(nest)
+		clippedNest = self.engineObj.clip_float(nest)
 		self.assertEqual(clippedNest, expected)
 	
 	def test_clip_pcm(self):
 		"""
-		Test that Plugin.clip_pcm() properly clips a nested list
+		Test that Engine.clip_pcm() properly clips a nested list
 		of PCM values of various bit depth.
 		"""
 		paramNest = [
@@ -514,14 +514,14 @@ class ClipTestMethods(unittest.TestCase):
 		
 		for paramList in paramNest:
 			with self.subTest(params=paramList):
-				clippedNest = self.pluginObj.clip_pcm(paramList[1], 
+				clippedNest = self.engineObj.clip_pcm(paramList[1], 
 														paramList[0])
 				self.assertEqual(clippedNest, paramList[2])
 	
 	
 class ReachBackTestMethods(unittest.TestCase):
 	"""
-	Methods to test the reach back functionality of the Plugin
+	Methods to test the reach back functionality of the Engine
 	class.
 	"""
 	dataNest = []  # For accumulating nested sample data over
@@ -532,7 +532,7 @@ class ReachBackTestMethods(unittest.TestCase):
 	
 	def reachback_cb_closure(self, reachBack):
 		"""
-		For testing the Plugin.reach_back() function.  Closure
+		For testing the Engine.reach_back() function.  Closure
 		allows assignment of the reachBack value.
 		"""
 		def cb(pIObj, sampleNestedList):
@@ -552,35 +552,35 @@ class ReachBackTestMethods(unittest.TestCase):
 		"""
 		paramNest = [
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_64BIT.wav',
+				'ENGINE_FLOAT_2CH_44100SR_64BIT.wav',
 				1000
 			],
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_64BIT.wav',
+				'ENGINE_FLOAT_2CH_44100SR_64BIT.wav',
 				10
 			],
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_32BIT.wav',
+				'ENGINE_FLOAT_2CH_44100SR_32BIT.wav',
 				1000
 			],
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_32BIT.wav',
+				'ENGINE_FLOAT_2CH_44100SR_32BIT.wav',
 				10
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_8BIT.wav',
+				'ENGINE_PCM_2CH_44100SR_8BIT.wav',
 				1000
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_8BIT.wav',
+				'ENGINE_PCM_2CH_44100SR_8BIT.wav',
 				10
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_16BIT.wav',
+				'ENGINE_PCM_2CH_44100SR_16BIT.wav',
 				1000
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_16BIT.wav',
+				'ENGINE_PCM_2CH_44100SR_16BIT.wav',
 				10
 			],
 		]
@@ -592,43 +592,43 @@ class ReachBackTestMethods(unittest.TestCase):
 				# init objects
 				readAudioObj = wIO.ReadWav(readFile)
 				writeAudioObj = wIO.WriteWav(writeFile)
-				pluginObj = plugin.Plugin(readAudioObj, writeAudioObj, 
+				engineObj = engine.Engine(readAudioObj, writeAudioObj, 
 									  self.plugin_cb, reachBack=paramList[1])
 				
 				# Expected difference in size
 				sizeDiff = paramList[1] * \
-					pluginObj.readObj.headerDict[
-						pluginObj.readObj.keyByteDepth] * \
-					pluginObj.readObj.headerDict[
-						pluginObj.readObj.keyNumChannels]
+					engineObj.readObj.headerDict[
+						engineObj.readObj.keyByteDepth] * \
+					engineObj.readObj.headerDict[
+						engineObj.readObj.keyNumChannels]
 				# Store read/write chunk size
 				readChunkSize = \
-					pluginObj.readObj.headerDict[
-						pluginObj.readObj.keyChunkSize]
+					engineObj.readObj.headerDict[
+						engineObj.readObj.keyChunkSize]
 				writeChunkSize = \
-					pluginObj.writeObj.headerDict[
-						pluginObj.writeObj.keyChunkSize]
+					engineObj.writeObj.headerDict[
+						engineObj.writeObj.keyChunkSize]
 				# Store read/write data subchunk size
-				if pluginObj.readObj.headerDict[
-						pluginObj.readObj.keySubchunk2Id] == \
-						pluginObj.readObj.dataSubchunkId:
+				if engineObj.readObj.headerDict[
+						engineObj.readObj.keySubchunk2Id] == \
+						engineObj.readObj.dataSubchunkId:
 					readDataSubChunkSize = \
-						pluginObj.readObj.headerDict[
-							pluginObj.readObj.keySubchunk2Size]
+						engineObj.readObj.headerDict[
+							engineObj.readObj.keySubchunk2Size]
 				else:
 					readDataSubChunkSize = \
-						pluginObj.readObj.headerDict[
-							pluginObj.readObj.keySubchunk3Size]
-				if pluginObj.writeObj.headerDict[
-						pluginObj.writeObj.keySubchunk2Id] == \
-						pluginObj.writeObj.dataSubchunkId:
+						engineObj.readObj.headerDict[
+							engineObj.readObj.keySubchunk3Size]
+				if engineObj.writeObj.headerDict[
+						engineObj.writeObj.keySubchunk2Id] == \
+						engineObj.writeObj.dataSubchunkId:
 					writeDataSubChunkSize = \
-						pluginObj.writeObj.headerDict[
-							pluginObj.writeObj.keySubchunk2Size]
+						engineObj.writeObj.headerDict[
+							engineObj.writeObj.keySubchunk2Size]
 				else:
 					writeDataSubChunkSize = \
-						pluginObj.writeObj.headerDict[
-							pluginObj.writeObj.keySubchunk3Size]
+						engineObj.writeObj.headerDict[
+							engineObj.writeObj.keySubchunk3Size]
 				# ASSERTIONS:
 				self.assertEqual(writeChunkSize, 
 								 (readChunkSize + sizeDiff))
@@ -643,7 +643,7 @@ class ReachBackTestMethods(unittest.TestCase):
 		self.maxDiff = None
 		paramNest = [
 			[
-				'PLUGIN_PCM_2CH_44100SR_16BIT.wav',
+				'ENGINE_PCM_2CH_44100SR_16BIT.wav',
 				'reachBack16bit_2.wav',
 				2,
 				[
@@ -664,7 +664,7 @@ class ReachBackTestMethods(unittest.TestCase):
 				]
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_16BIT.wav',
+				'ENGINE_PCM_2CH_44100SR_16BIT.wav',
 				'reachBack16bit_5.wav',
 				5,
 				[
@@ -688,7 +688,7 @@ class ReachBackTestMethods(unittest.TestCase):
 				]
 			],
 			[
-				'PLUGIN_PCM_2CH_44100SR_16BIT.wav',
+				'ENGINE_PCM_2CH_44100SR_16BIT.wav',
 				'reachBack16bit_20.wav',
 				20,
 				[
@@ -727,7 +727,7 @@ class ReachBackTestMethods(unittest.TestCase):
 				]
 			],
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_32BIT.wav',
+				'ENGINE_FLOAT_2CH_44100SR_32BIT.wav',
 				'reachBack32bit_2.wav',
 				2,
 				[
@@ -748,7 +748,7 @@ class ReachBackTestMethods(unittest.TestCase):
 				]
 			],
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_32BIT.wav',
+				'ENGINE_FLOAT_2CH_44100SR_32BIT.wav',
 				'reachBack32bit_5.wav',
 				5,
 				[
@@ -772,7 +772,7 @@ class ReachBackTestMethods(unittest.TestCase):
 				]
 			],
 			[
-				'PLUGIN_FLOAT_2CH_44100SR_32BIT.wav',
+				'ENGINE_FLOAT_2CH_44100SR_32BIT.wav',
 				'reachBack32bit_20.wav',
 				20,
 				[
@@ -821,10 +821,10 @@ class ReachBackTestMethods(unittest.TestCase):
 				# init objects
 				readAudioObj = wIO.ReadWav(readFile)
 				writeAudioObj = wIO.WriteWav(writeFile)
-				pluginObj = plugin.Plugin(readAudioObj, writeAudioObj, 
+				engineObj = engine.Engine(readAudioObj, writeAudioObj, 
 									  self.reachback_cb, 
 									  reachBack=paramList[2])
-				pluginObj.process()
+				engineObj.process()
 				# Assertion:
 				self.assertEqual(self.dataNest, paramList[3])
 				self.dataNest.clear()

@@ -1,12 +1,12 @@
 """
-Base class for the plugins.
+Base class for the engine.
 """
 import math
 import copy
 from collections import deque
 
 
-class Plugin:
+class Engine:
 	"""
 	Class for plugin algorithm objects.  Connects a ReadAudo object
 	with a WriteAudio object and an audio processing algorithm, as a
@@ -166,7 +166,7 @@ class Plugin:
 	
 	def default_algorithm(self, sampleNestedList):
 		"""
-		Default algorithm, if Plugin object is instantiated without
+		Default algorithm, if Engine object is instantiated without
 		an algorithm callback.
 		"""
 		return sampleNestedList

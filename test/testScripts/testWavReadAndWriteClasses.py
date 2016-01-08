@@ -7,8 +7,8 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(),
 	os.path.expanduser(__file__))))
 PACKAGE_PATH = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_ROOT))
 sys.path.append(PACKAGE_PATH)
-from audioIO.io import wavIO as wIO
-from audioIO.plugins import plugin
+from src.io import wavIO as wIO
+from src.engine import engine
 
 TEST_DATA_DIR = os.path.normpath(
 					os.path.dirname(
@@ -169,10 +169,10 @@ class CopyTestFilesTestMethods(unittest.TestCase):
 					self.writeAudioObj = wIO.WriteWav(os.path.join(
 															TEST_DATA_DIR, 
 															writeFile))
-					self.pluginObj = plugin.Plugin(self.readAudioObj, 
+					self.engineObj = engine.Engine(self.readAudioObj, 
 												self.writeAudioObj, 
 												self.plugin_cb)
-					self.pluginObj.process()
+					self.engineObj.process()
 					# Test that copy was successful
 					readSha1 = hashlib.sha1()
 					writeSha1 = hashlib.sha1()
