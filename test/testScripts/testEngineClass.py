@@ -9,6 +9,7 @@ PACKAGE_PATH = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_ROOT))
 sys.path.append(PACKAGE_PATH)
 from src.framework import wavIO as wIO
 from src.framework import audioIO as aIO
+from src.framework import engine_helper
 from src.framework import engine
 
 TEST_DATA_DIR = os.path.normpath(
@@ -354,9 +355,9 @@ class FloatPcmConversionsTestMethods(unittest.TestCase):
 			]
 		]
 		for paramList in paramNest:
-			converted = self.engineObj.float_to_pcm(paramList[0], 
-													paramList[1], 
-													paramList[2])
+			converted = engine_helper.float_to_pcm(paramList[0], 
+												   paramList[1], 
+												   paramList[2])
 			for i in range(len(converted)):
 				with self.subTest(params=paramList):
 					tolerance = 0
@@ -394,9 +395,9 @@ class FloatPcmConversionsTestMethods(unittest.TestCase):
 			]
 		]
 		for paramList in paramNest:
-			converted = self.engineObj.pcm_to_float(paramList[0], 
-													paramList[1], 
-													paramList[2])
+			converted = engine_helper.pcm_to_float(paramList[0], 
+												   paramList[1], 
+												   paramList[2])
 			for i in range(len(converted)):
 				reference = (paramList[3][i][0], converted[1][0])
 				with self.subTest(expected_actual=reference):
@@ -432,7 +433,7 @@ class ClipTestMethods(unittest.TestCase):
 	
 	def test_clip_float(self):
 		"""
-		Test that Engine.clip_float() properly clips a nested list
+		Test that engine_helper.clip_float() properly clips a nested list
 		of float values.
 		"""
 		nest = [
@@ -451,12 +452,12 @@ class ClipTestMethods(unittest.TestCase):
 			[-0.5, 0.5],
 			[0.0, 0.0]
 		]
-		clippedNest = self.engineObj.clip_float(nest)
+		clippedNest = engine_helper.clip_float(nest)
 		self.assertEqual(clippedNest, expected)
 	
 	def test_clip_pcm(self):
 		"""
-		Test that Engine.clip_pcm() properly clips a nested list
+		Test that engine_helper.clip_pcm() properly clips a nested list
 		of PCM values of various bit depth.
 		"""
 		paramNest = [
@@ -515,8 +516,8 @@ class ClipTestMethods(unittest.TestCase):
 		
 		for paramList in paramNest:
 			with self.subTest(params=paramList):
-				clippedNest = self.engineObj.clip_pcm(paramList[1], 
-														paramList[0])
+				clippedNest = engine_helper.clip_pcm(paramList[1], 
+													 paramList[0])
 				self.assertEqual(clippedNest, paramList[2])
 	
 	
