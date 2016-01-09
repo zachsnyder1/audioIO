@@ -605,31 +605,31 @@ class ReachBackTestMethods(unittest.TestCase):
 				# Store read/write chunk size
 				readChunkSize = \
 					engineObj.readObj.headerDict[
-						engineObj.readObj.keyChunkSize]
+						wIO.KEY_CHUNK_SIZE]
 				writeChunkSize = \
 					engineObj.writeObj.headerDict[
-						engineObj.writeObj.keyChunkSize]
+						wIO.KEY_CHUNK_SIZE]
 				# Store read/write data subchunk size
 				if engineObj.readObj.headerDict[
-						engineObj.readObj.keySubchunk2Id] == \
-						engineObj.readObj.dataSubchunkId:
+						wIO.KEY_SUBCHUNK2_ID] == \
+						wIO.DATA_SUBCHUNK_ID:
 					readDataSubChunkSize = \
 						engineObj.readObj.headerDict[
-							engineObj.readObj.keySubchunk2Size]
+							wIO.KEY_SUBCHUNK2_SIZE]
 				else:
 					readDataSubChunkSize = \
 						engineObj.readObj.headerDict[
-							engineObj.readObj.keySubchunk3Size]
+							wIO.KEY_SUBCHUNK3_SIZE]
 				if engineObj.writeObj.headerDict[
-						engineObj.writeObj.keySubchunk2Id] == \
-						engineObj.writeObj.dataSubchunkId:
+						wIO.KEY_SUBCHUNK2_ID] == \
+						wIO.DATA_SUBCHUNK_ID:
 					writeDataSubChunkSize = \
 						engineObj.writeObj.headerDict[
-							engineObj.writeObj.keySubchunk2Size]
+							wIO.KEY_SUBCHUNK2_SIZE]
 				else:
 					writeDataSubChunkSize = \
 						engineObj.writeObj.headerDict[
-							engineObj.writeObj.keySubchunk3Size]
+							wIO.KEY_SUBCHUNK3_SIZE]
 				# ASSERTIONS:
 				self.assertEqual(writeChunkSize, 
 								 (readChunkSize + sizeDiff))
