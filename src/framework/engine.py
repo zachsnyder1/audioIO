@@ -4,6 +4,7 @@ Base class for the engine.
 import math
 import copy
 from collections import deque
+from . import audioIO as aIO
 
 
 class Engine:
@@ -44,7 +45,7 @@ class Engine:
 		# If reachBack, create the reach back deque
 		if self.reachBack > 0:
 			reachBackDequeLength = \
-				math.ceil(self.reachBack / self.readObj.samplesPerBuffer) + 1
+				math.ceil(self.reachBack / aIO.SAMPLES_PER_BUFFER) + 1
 		else:
 			reachBackDequeLength = 0
 		self.reachBackDeque = deque(deque(), reachBackDequeLength)
@@ -55,12 +56,12 @@ class Engine:
 			self.readObj.read_header(readStream)
 		self.writeObj.init_header(self.readObj, self.reachBack)
 		# for quick, clean access in the algorithm_wrapper_closure() function:
-		readFormat = self.readObj.headerDict[self.readObj.keyAudioFmtStr]
-		writeFormat = self.writeObj.headerDict[self.writeObj.keyAudioFmtStr]
-		readBitDepth = self.readObj.headerDict[self.readObj.keyBitDepth]
-		writeBitDepth = self.writeObj.headerDict[self.writeObj.keyBitDepth]
-		readSigned = self.readObj.headerDict[self.readObj.keySigned]
-		writeSigned = self.writeObj.headerDict[self.writeObj.keySigned]
+		readFormat = self.readObj.headerDict[aIO.CORE_KEY_FMT]
+		writeFormat = self.writeObj.headerDict[aIO.CORE_KEY_FMT]
+		readBitDepth = self.readObj.headerDict[aIO.CORE_KEY_BIT_DEPTH]
+		writeBitDepth = self.writeObj.headerDict[aIO.CORE_KEY_BIT_DEPTH]
+		readSigned = self.readObj.headerDict[aIO.CORE_KEY_SIGNED]
+		writeSigned = self.writeObj.headerDict[aIO.CORE_KEY_SIGNED]
 		# init self.exposureFormat, if None
 		if self.exposureFormat == None:
 			self.exposureFormat = readFormat
@@ -81,15 +82,15 @@ class Engine:
 				# Write header of output
 				self.writeObj.write_header(writeStream)
 				# Set read stream to beginning of data
-				readStream.seek(self.readObj.reset)
+				readStream.seek(0)
 				self.byteArray = readStream.read(self.readObj.headerLen)
 					
 				# Expose a nested list of samples to the callback function
 				# and write the processed data:
 				blockAlign = \
-					self.readObj.headerDict[self.readObj.keyByteDepth] * \
-					self.readObj.headerDict[self.readObj.keyNumChannels]
-				bufferSize = self.readObj.samplesPerBuffer * blockAlign
+					self.readObj.headerDict[aIO.CORE_KEY_BYTE_DEPTH] * \
+					self.readObj.headerDict[aIO.CORE_KEY_NUM_CHANNELS]
+				bufferSize = aIO.SAMPLES_PER_BUFFER * blockAlign
 				while True:
 					byteArray = readStream.read(bufferSize)   # Read Data
 					if byteArray:
@@ -123,23 +124,23 @@ class Engine:
 		else:
 			# For calculations
 			readFormat = \
-				self.readObj.headerDict[self.readObj.keyAudioFmtStr]
-			readBitDepth = self.readObj.headerDict[self.readObj.keyBitDepth]
-			readSigned = self.readObj.headerDict[self.readObj.keySigned]
+				self.readObj.headerDict[aIO.CORE_KEY_FMT]
+			readBitDepth = self.readObj.headerDict[aIO.CORE_KEY_BIT_DEPTH]
+			readSigned = self.readObj.headerDict[aIO.CORE_KEY_SIGNED]
 			# Set correct zero (float, PCM signed, PCM unsigned)
 			zero = None
-			if readFormat == self.readObj.formatStringFloat:
+			if readFormat == aIO.FLOAT:
 				zero = float(0)
-			elif readFormat == self.readObj.formatStringPCM and \
+			elif readFormat == aIO.PCM and \
 				readSigned == True:
 				zero = int(0)
-			elif readFormat == self.readObj.formatStringPCM and \
+			elif readFormat == aIO.PCM and \
 				readSigned == False:
 				zero = int(2**(readBitDepth - 1))
 			# Create a dummy nested list with all zeros
 			list = []
 			for i in range(self.readObj.headerDict[
-							self.readObj.keyNumChannels]):
+							aIO.CORE_KEY_NUM_CHANNELS]):
 				list.append(copy.copy(zero))
 			nest = []
 			for i in range(self.reachBack):
@@ -152,7 +153,7 @@ class Engine:
 				else:
 					pass
 				bufferFull = nest[counter:
-								  (counter + self.readObj.samplesPerBuffer)]
+								  (counter + aIO.SAMPLES_PER_BUFFER)]
 				# Execute callback
 				processedSampleNestedList = \
 					self.algorithm_wrapper(self, bufferFull)
@@ -161,7 +162,7 @@ class Engine:
 					self.writeObj.repack(processedSampleNestedList)
 				# Write processed buffer to file
 				writeStream.write(processedByteArray)
-				counter += self.readObj.samplesPerBuffer
+				counter += aIO.SAMPLES_PER_BUFFER
 
 	
 	def default_algorithm(self, sampleNestedList):
@@ -197,17 +198,17 @@ class Engine:
 		# Conditionally define algorithm_wrapper() function:
 		# If read format and write format are both float...
 		if readFormat == writeFormat and \
-			(readFormat == self.readObj.formatStringFloat):
+			(readFormat == aIO.FLOAT):
 			# ...and the algorithm works with floating point,
 			# simply pass to the algorithm.
-			if self.exposureFormat == self.readObj.formatStringFloat:
+			if self.exposureFormat == aIO.FLOAT:
 				def algorithm_wrapper(self, sampleNestedList):
 					self.update_reachback_deques(sampleNestedList)
 					processedNest = self.algorithm(self, sampleNestedList)
 					return self.clip_float(processedNest)
 			# ...but the algorithm works with PCM,
 			# convert to PCM, pass to algorithm, convert back to float.
-			elif self.exposureFormat == self.readObj.formatStringPCM:
+			elif self.exposureFormat == aIO.PCM:
 				def algorithm_wrapper(self, sampleNestedList):
 					preProcessedNest = self.float_to_pcm(sampleNestedList, 
 														 32, 
@@ -220,10 +221,10 @@ class Engine:
 											 True)
 		# If read format and write format are both PCM...
 		elif readFormat == writeFormat and \
-			(readFormat == self.readObj.formatStringPCM):
+			(readFormat == aIO.PCM):
 			# ...but the algorithm works with floating point,
 			# convert to float, pass to algorithm, convert back to PCM
-			if self.exposureFormat == self.readObj.formatStringFloat:
+			if self.exposureFormat == aIO.FLOAT:
 				def algorithm_wrapper(self, sampleNestedList):
 					preProcessedNest = self.pcm_to_float(sampleNestedList, 
 															readBitDepth, 
@@ -235,7 +236,7 @@ class Engine:
 												writeBitDepth, 
 												writeSigned)
 			# ...and the algorithm works with PCM...
-			elif self.exposureFormat == self.readObj.formatStringPCM:
+			elif self.exposureFormat == aIO.PCM:
 				# ...and the read data is unsigned...
 				if not readSigned:
 					def algorithm_wrapper(self, sampleNestedList):
@@ -279,10 +280,10 @@ class Engine:
 													writeSigned)
 		# If read format is float and write format is PCM...
 		elif readFormat != writeFormat and \
-			(readFormat == self.readObj.formatStringFloat):
+			(readFormat == aIO.FLOAT):
 			# ...and the algorithm works with floating point,
 			# pass to the algorithm, then convert to PCM.
-			if self.exposureFormat == self.readObj.formatStringFloat:
+			if self.exposureFormat == aIO.FLOAT:
 				def algorithm_wrapper(self, sampleNestedList):
 					self.update_reachback_deques(sampleNestedList)
 					processedNest = self.algorithm(self, sampleNestedList)
@@ -292,7 +293,7 @@ class Engine:
 												writeSigned)
 			# ...and the algorithm works with PCM...
 			
-			elif self.exposureFormat == self.readObj.formatStringPCM:
+			elif self.exposureFormat == aIO.PCM:
 				# ...and the write data is unsigned,
 				# convert to signed PCM, pass to algorithm, then to unsigned.
 				if not writeSigned:
@@ -319,10 +320,10 @@ class Engine:
 						return self.clip_pcm(processedNest, writeBitDepth)
 		# If read format is PCM and write format is float...
 		elif readFormat != writeFormat and \
-			(readFormat == self.readObj.formatStringPCM):
+			(readFormat == aIO.PCM):
 			# ...and the algorithm works with floating point,
 			# convert to float, then pass to the algorithm.
-			if self.exposureFormat == self.readObj.formatStringFloat:
+			if self.exposureFormat == aIO.FLOAT:
 				def algorithm_wrapper(self, sampleNestedList):
 					preProcessedNest = self.pcm_to_float(sampleNestedList, 
 															readBitDepth, 
@@ -331,7 +332,7 @@ class Engine:
 					processedNest = self.algorithm(self, preProcessedNest)
 					return self.clip_float(processedNest)
 			# ...and the algorithm works with PCM...
-			elif self.exposureFormat == self.readObj.formatStringPCM:
+			elif self.exposureFormat == aIO.PCM:
 				# ...and the read file data is unsigned,
 				# convert to 2's compliment, pass to algorithm, then
 				# convert to float.

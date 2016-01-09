@@ -7,8 +7,9 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(),
 	os.path.expanduser(__file__))))
 PACKAGE_PATH = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_ROOT))
 sys.path.append(PACKAGE_PATH)
-from src.io import wavIO as wIO
-from src.engine import engine
+from src.framework import wavIO as wIO
+from src.framework import audioIO as aIO
+from src.framework import engine
 
 TEST_DATA_DIR = os.path.normpath(
 					os.path.dirname(
@@ -598,9 +599,9 @@ class ReachBackTestMethods(unittest.TestCase):
 				# Expected difference in size
 				sizeDiff = paramList[1] * \
 					engineObj.readObj.headerDict[
-						engineObj.readObj.keyByteDepth] * \
+						aIO.CORE_KEY_BYTE_DEPTH] * \
 					engineObj.readObj.headerDict[
-						engineObj.readObj.keyNumChannels]
+						aIO.CORE_KEY_NUM_CHANNELS]
 				# Store read/write chunk size
 				readChunkSize = \
 					engineObj.readObj.headerDict[

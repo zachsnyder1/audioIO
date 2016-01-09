@@ -6,7 +6,7 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(),
 	os.path.expanduser(__file__))))
 PACKAGE_PATH = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_ROOT))
 sys.path.append(PACKAGE_PATH)
-from src.io import audioIO as aIO
+from src.framework import audioIO as aIO
 
 TEST_DATA_DIR = os.path.normpath(
 					os.path.dirname(
@@ -42,11 +42,11 @@ class WriteAudioInitTestMethods(unittest.TestCase):
 		self.assertIsInstance(writeObj, aIO.WriteAudio)
 		self.assertEqual(writeObj.conversion, True)
 		self.assertEqual(writeObj.conversionParameters, {
-			aIO.WriteAudio.keyAudioFmtStr: 'PCM',
-			aIO.WriteAudio.keyNumChannels: 2,
-			aIO.WriteAudio.keyBitDepth: 16,
-			aIO.WriteAudio.keyByteDepth: 2,
-			aIO.WriteAudio.keySampleRate: 44100
+			aIO.CORE_KEY_FMT: 'PCM',
+			aIO.CORE_KEY_NUM_CHANNELS: 2,
+			aIO.CORE_KEY_BIT_DEPTH: 16,
+			aIO.CORE_KEY_BYTE_DEPTH: 2,
+			aIO.CORE_KEY_SAMPLE_RATE: 44100
 		})
 		
 
@@ -85,9 +85,9 @@ class PackAndWriteTestMethods(unittest.TestCase):
 				self.writeObj.headerDict['test'] = parameterList[0]
 				# handle endianness
 				if parameterList[1] == 'little':
-					packStr = self.writeObj.packLittleUTF
+					packStr = aIO.LITTLE_UTF
 				elif parameterList[1] == 'big':
-					packStr = self.writeObj.packBigUTF
+					packStr = aIO.BIG_UTF
 				# write utf to file
 				with open(TEST_WRITE_FILE, 'wb') as writeStream:
 					writeStream.truncate()
@@ -98,10 +98,10 @@ class PackAndWriteTestMethods(unittest.TestCase):
 				binary = bytearray()
 				with open(TEST_WRITE_FILE, 'rb') as readStream:
 					binary += readStream.read(len(parameterList[0]))
-				if packStr == self.writeObj.packBigUTF:
+				if packStr == aIO.BIG_UTF:
 					self.assertEqual(self.writeObj.headerDict['test'], 
 									 binary.decode('utf-8'))
-				elif packStr == self.writeObj.packLittleUTF:
+				elif packStr == aIO.LITTLE_UTF:
 					self.assertEqual(self.writeObj.headerDict['test'], 
 									 binary.decode('utf-8')[::-1])
 					
@@ -132,14 +132,14 @@ class PackAndWriteTestMethods(unittest.TestCase):
 					int((2**((parameterList[0]*8) - 1)) - 1)
 				# handle endianness
 				if parameterList[1] == 'little' and parameterList[2] == True:
-					packStr = self.writeObj.packLittleINT
+					packStr = aIO.LITTLE_INT
 				elif parameterList[1] == 'little' and \
 					parameterList[2] == False:
-					packStr = self.writeObj.packLittleUINT
+					packStr = aIO.LITTLE_UINT
 				elif parameterList[1] == 'big' and parameterList[2] == True:
-					packStr = self.writeObj.packBigINT
+					packStr = aIO.BIG_INT
 				elif parameterList[1] == 'big' and parameterList[2] == False:
-					packStr = self.writeObj.packBigUINT
+					packStr = aIO.BIG_UINT
 				# write utf to file
 				with open(TEST_WRITE_FILE, 'wb') as writeStream:
 					writeStream.truncate()
@@ -151,22 +151,22 @@ class PackAndWriteTestMethods(unittest.TestCase):
 				with open(TEST_WRITE_FILE, 'rb') as readStream:
 					binary += readStream.read(parameterList[0])
 				# assert
-				if packStr == self.writeObj.packLittleINT:
+				if packStr == aIO.LITTLE_INT:
 					self.assertEqual(self.writeObj.headerDict['test'], 
 									 int.from_bytes(binary, 
 									 				byteorder='little', 
 									 				signed=True))
-				elif packStr == self.writeObj.packLittleUINT:
+				elif packStr == aIO.LITTLE_UINT:
 					self.assertEqual(self.writeObj.headerDict['test'], 
 									 int.from_bytes(binary, 
 									 				byteorder='little', 
 									 				signed=False))
-				elif packStr == self.writeObj.packBigINT:
+				elif packStr == aIO.BIG_INT:
 					self.assertEqual(self.writeObj.headerDict['test'], 
 									 int.from_bytes(binary, 
 									 				byteorder='big', 
 									 				signed=True))
-				elif packStr == self.writeObj.packBigUINT:
+				elif packStr == aIO.BIG_UINT:
 					self.assertEqual(self.writeObj.headerDict['test'], 
 									 int.from_bytes(binary, 
 									 				byteorder='big', 
@@ -227,19 +227,19 @@ class PackAndWriteTestMethods(unittest.TestCase):
 					# handle pack string
 					if paramNestedList[i][1] == 'little' and \
 						paramNestedList[i][2] == True:
-						tupleList.append((self.writeObj.packLittleINT, 
+						tupleList.append((aIO.LITTLE_INT, 
 										  keyList[i], leng))
 					elif paramNestedList[i][1] == 'little' and \
 						paramNestedList[i][2] == False:
-						tupleList.append((self.writeObj.packLittleUINT, 
+						tupleList.append((aIO.LITTLE_UINT, 
 										  keyList[i], leng))
 					elif paramNestedList[i][1] == 'big' and \
 						paramNestedList[i][2] == True:
-						tupleList.append((self.writeObj.packBigINT, 
+						tupleList.append((aIO.BIG_INT, 
 										  keyList[i], leng))
 					elif paramNestedList[i][1] == 'big' and \
 						paramNestedList[i][2] == False:
-						tupleList.append((self.writeObj.packBigUINT, 
+						tupleList.append((aIO.BIG_UINT, 
 										  keyList[i], leng))
 					else:
 						raise
@@ -247,10 +247,10 @@ class PackAndWriteTestMethods(unittest.TestCase):
 					leng = len(paramNestedList[i][0])
 					# handle endianness
 					if paramNestedList[i][1] == 'little':
-						tupleList.append((self.writeObj.packLittleUTF, 
+						tupleList.append((aIO.LITTLE_UTF, 
 										  keyList[i]))
 					elif paramNestedList[i][1] == 'big':
-						tupleList.append((self.writeObj.packBigUTF, 
+						tupleList.append((aIO.BIG_UTF, 
 										  keyList[i]))
 					else:
 						raise

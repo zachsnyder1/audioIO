@@ -67,7 +67,7 @@ class WavBase:
 	wavFmtMULaw = 7 # Mu-law 8-bit data
 	wavFmtExtensible = 61183 # Extensible format
 	
-	def init_fmt_str(self):
+	def init_struct_fmt_str(self):
 		"""
 		Initializes the multiplier and data type character for the struct
 		format string.  Called at the end of read_header() override.
@@ -75,30 +75,30 @@ class WavBase:
 		self.headerDict[self.keyStructMultiplier] = '' # initialize for later
 		# Supported formats:
 		if self.headerDict[self.keyAudioFmt] == self.wavFmtPCM and \
-			self.headerDict[self.keyByteDepth] == self.int8Size:
+			self.headerDict[aIO.CORE_KEY_BYTE_DEPTH] == aIO.INT8_SIZE:
 			self.headerDict[self.keyStructFmtChar] = 'B'
 		elif self.headerDict[self.keyAudioFmt] == self.wavFmtPCM and \
-			self.headerDict[self.keyByteDepth] == self.int16Size:
+			self.headerDict[aIO.CORE_KEY_BYTE_DEPTH] == aIO.INT16_SIZE:
 			self.headerDict[self.keyStructFmtChar] = 'h'
 		elif self.headerDict[self.keyAudioFmt] == self.wavFmtFloat and \
-			self.headerDict[self.keyByteDepth] == self.floatSize:
+			self.headerDict[aIO.CORE_KEY_BYTE_DEPTH] == aIO.FLOAT_SIZE:
 			self.headerDict[self.keyStructFmtChar] = 'f'
 		elif self.headerDict[self.keyAudioFmt] == self.wavFmtFloat and \
-			self.headerDict[self.keyByteDepth] == self.doubleSize:
+			self.headerDict[aIO.CORE_KEY_BYTE_DEPTH] == aIO.DOUBLE_SIZE:
 			self.headerDict[self.keyStructFmtChar] = 'd'
 		# Else: raise IncompatibleAudioFormat with format description
 		else:
 			try:
-				fmtStr = self.headerDict[self.keyAudioFmtStr]
+				fmtStr = self.headerDict[aIO.CORE_KEY_FMT]
 			except KeyError:
 				fmtStr = 'unknown'
 			exStr = "{} format not supported: {}-bit {}"
 			fmtdExStr = exStr.format(self.targetFile, 
-								   self.headerDict[self.keyBitDepth],
+								   self.headerDict[aIO.CORE_KEY_BIT_DEPTH],
 								   fmtStr)
 			raise aIO.IncompatibleAudioFormat(fmtdExStr)
 			
-	def struct_fmt_str(self):
+	def get_struct_fmt_str(self):
 		"""
 		Called in unpack and pack to determine struct formatting string based
 		on buffer length.
@@ -130,15 +130,15 @@ class ReadWav(aIO.ReadAudio, WavBase):
 		"""
 		# BIN SEARCH FOR CHUNK IDs
 		self.read_and_assign(readStream, self.wavHeaderSearchLen, (
-			(self.assignDIRECT, self.keyRiffIdIndex, 
+			(aIO.DIRECT, self.keyRiffIdIndex, 
 			lambda: self.byteArray.find(self.riffIdHex)),
-			(self.assignDIRECT, self.keyWaveIdIndex, 
+			(aIO.DIRECT, self.keyWaveIdIndex, 
 			lambda: self.byteArray.find(self.waveIdHex)),
-			(self.assignDIRECT, self.keyFmtIdIndex, 
+			(aIO.DIRECT, self.keyFmtIdIndex, 
 			lambda: self.byteArray.find(self.fmtIdHex)),
-			(self.assignDIRECT, self.keyFactIdIndex, 
+			(aIO.DIRECT, self.keyFactIdIndex, 
 			lambda: self.byteArray.find(self.factIdHex)),
-			(self.assignDIRECT, self.keyDataIdIndex, 
+			(aIO.DIRECT, self.keyDataIdIndex, 
 			lambda: self.byteArray.find(self.dataIdHex))))
 		# Verify file format
 		if (self.headerDict[self.keyRiffIdIndex] or 
@@ -150,9 +150,9 @@ class ReadWav(aIO.ReadAudio, WavBase):
 		else:
 			pass
 		# RESET CURRENT POSITION
-		readStream.seek(self.reset)
-		self.readOffset = self.reset
-		self.headerLen = self.reset
+		readStream.seek(0)
+		self.readOffset = 0
+		self.headerLen = 0
 		
 		# BEGIN INIT:
 		# READ AND STORE CHUNK HEADER + fmt SUBCHUNK HEADER AND BODY
@@ -161,56 +161,56 @@ class ReadWav(aIO.ReadAudio, WavBase):
 		else:
 			readLen1 = self.headerDict[self.keyFactIdIndex]
 		self.read_and_assign(readStream, readLen1, (
-			(self.assignBigUTF, self.keyChunkId, self.int32Size),
-			(self.assignLittleUINT, self.keyChunkSize, self.int32Size),
-			(self.assignBigUTF, self.keyFormatId, self.int32Size),
-			(self.assignBigUTF, self.keySubchunk1Id, self.int32Size),
-			(self.assignLittleUINT, self.keySubchunk1Size, self.int32Size),
-			(self.assignLittleUINT, self.keyAudioFmt, self.int16Size),
-			(self.assignLittleUINT, self.keyNumChannels, self.int16Size),
-			(self.assignLittleUINT, self.keySampleRate, self.int32Size),
-			(self.assignLittleUINT, self.keyByteRate, self.int32Size),
-			(self.assignLittleUINT, self.keyBlockAlign, self.int16Size),
-			(self.assignLittleUINT, self.keyBitDepth, self.int16Size),
-			(self.assignLittleUINT, self.keyCbSize, self.int16Size),
-			(self.assignLittleUINT, self.keyWValidBPS, self.int16Size),
-			(self.assignLittleUINT, self.keyDwChannelMask, self.int32Size),
-			(self.assignLittleUINT, self.keySubFmtAudioFmt, self.int16Size),
-			(self.assignLittleUINT, self.keySubFormat, self.subformatSize),
-			(self.assignDIRECT, self.keyByteDepth, 
-			lambda: int(self.headerDict[self.keyBitDepth] / self.byteSize))))
-		# set core key self.keyAudioFmtStr
+			(aIO.BIG_UTF, self.keyChunkId, aIO.INT32_SIZE),
+			(aIO.LITTLE_UINT, self.keyChunkSize, aIO.INT32_SIZE),
+			(aIO.BIG_UTF, self.keyFormatId, aIO.INT32_SIZE),
+			(aIO.BIG_UTF, self.keySubchunk1Id, aIO.INT32_SIZE),
+			(aIO.LITTLE_UINT, self.keySubchunk1Size, aIO.INT32_SIZE),
+			(aIO.LITTLE_UINT, self.keyAudioFmt, aIO.INT16_SIZE),
+			(aIO.LITTLE_UINT, aIO.CORE_KEY_NUM_CHANNELS, aIO.INT16_SIZE),
+			(aIO.LITTLE_UINT, aIO.CORE_KEY_SAMPLE_RATE, aIO.INT32_SIZE),
+			(aIO.LITTLE_UINT, self.keyByteRate, aIO.INT32_SIZE),
+			(aIO.LITTLE_UINT, self.keyBlockAlign, aIO.INT16_SIZE),
+			(aIO.LITTLE_UINT, aIO.CORE_KEY_BIT_DEPTH, aIO.INT16_SIZE),
+			(aIO.LITTLE_UINT, self.keyCbSize, aIO.INT16_SIZE),
+			(aIO.LITTLE_UINT, self.keyWValidBPS, aIO.INT16_SIZE),
+			(aIO.LITTLE_UINT, self.keyDwChannelMask, aIO.INT32_SIZE),
+			(aIO.LITTLE_UINT, self.keySubFmtAudioFmt, aIO.INT16_SIZE),
+			(aIO.LITTLE_UINT, self.keySubFormat, self.subformatSize),
+			(aIO.DIRECT, aIO.CORE_KEY_BYTE_DEPTH, 
+			lambda: int(self.headerDict[aIO.CORE_KEY_BIT_DEPTH] / aIO.BYTE_SIZE))))
+		# set core key aIO.CORE_KEY_FMT
 		if self.headerDict[self.keyAudioFmt] == self.wavFmtPCM:
-			self.headerDict[self.keyAudioFmtStr] = self.formatStringPCM
+			self.headerDict[aIO.CORE_KEY_FMT] = aIO.PCM
 		elif self.headerDict[self.keyAudioFmt] == self.wavFmtFloat:
-			self.headerDict[self.keyAudioFmtStr] = self.formatStringFloat
-		# set core key self.keySigned
+			self.headerDict[aIO.CORE_KEY_FMT] = aIO.FLOAT
+		# set core key aIO.CORE_KEY_SIGNED
 		if self.headerDict[self.keyAudioFmt] == self.wavFmtPCM and \
-			self.headerDict[self.keyByteDepth] == self.int8Size:
-			self.headerDict[self.keySigned] = False
+			self.headerDict[aIO.CORE_KEY_BYTE_DEPTH] == aIO.INT8_SIZE:
+			self.headerDict[aIO.CORE_KEY_SIGNED] = False
 		else:
-			self.headerDict[self.keySigned] = True
+			self.headerDict[aIO.CORE_KEY_SIGNED] = True
 		# IF NO FACT SUBCHUNK PRESENT
 		if self.headerDict[self.keyFactIdIndex] == self.binSearchFail:
 			readLen2 = self.subChunkHeadSize
 			self.read_and_assign(readStream, readLen2, (
-				(self.assignBigUTF, self.keySubchunk2Id, self.int32Size),
-				(self.assignLittleUINT, self.keySubchunk2Size, 
-				self.int32Size),))
+				(aIO.BIG_UTF, self.keySubchunk2Id, aIO.INT32_SIZE),
+				(aIO.LITTLE_UINT, self.keySubchunk2Size, 
+				aIO.INT32_SIZE),))
 		# IF FACT SUBCHUNK PRESENT
 		else:
 			readLen2 = ((self.headerDict[self.keyDataIdIndex] - 
 				self.headerDict[self.keyFactIdIndex]) + 
 				self.subChunkHeadSize)
 			self.read_and_assign(readStream, readLen2, (
-				(self.assignBigUTF, self.keySubchunk2Id, self.int32Size),
-				(self.assignLittleUINT, self.keySubchunk2Size, 
-				self.int32Size),
-				(self.assignLittleUINT, self.keyDwSampleLength, 
+				(aIO.BIG_UTF, self.keySubchunk2Id, aIO.INT32_SIZE),
+				(aIO.LITTLE_UINT, self.keySubchunk2Size, 
+				aIO.INT32_SIZE),
+				(aIO.LITTLE_UINT, self.keyDwSampleLength, 
 				lambda: self.headerDict[self.keySubchunk2Size]),
-				(self.assignBigUTF, self.keySubchunk3Id, self.int32Size),
-				(self.assignLittleUINT, self.keySubchunk3Size, 
-				self.int32Size)))
+				(aIO.BIG_UTF, self.keySubchunk3Id, aIO.INT32_SIZE),
+				(aIO.LITTLE_UINT, self.keySubchunk3Size, 
+				aIO.INT32_SIZE)))
 		# ASSIGN CORE KEY samples per channel
 		try:
 			samplesPerChannel = self.headerDict[self.keyDwSampleLength]
@@ -218,9 +218,9 @@ class ReadWav(aIO.ReadAudio, WavBase):
 			samplesPerChannel = int((self.headerDict[self.keyChunkSize] - 
 									self.headerLen) / 
 									self.headerDict[self.keyBlockAlign])
-		self.headerDict[self.keySamplesPerChannel] = samplesPerChannel
+		self.headerDict[aIO.CORE_KEY_SAMPLES_PER_CHANNEL] = samplesPerChannel
 		# ANY FURTHER INITIALIZATION:
-		self.init_fmt_str()
+		self.init_struct_fmt_str()
 
 	def unpack(self, byteArray):
 		"""
@@ -236,16 +236,16 @@ class ReadWav(aIO.ReadAudio, WavBase):
 		# Setup
 		nestedSampleList = []
 		self.headerDict[self.keyStructMultiplier] = \
-			int(len(byteArray) / self.headerDict[self.keyByteDepth])
+			int(len(byteArray) / self.headerDict[aIO.CORE_KEY_BYTE_DEPTH])
 		# Unpack buffer
-		bufferUnpacked = struct.unpack(self.struct_fmt_str(), byteArray[:])
+		bufferUnpacked = struct.unpack(self.get_struct_fmt_str(), byteArray[:])
 		# Assemble into nested list
 		for block in range(int(len(bufferUnpacked)  / 
-								self.headerDict[self.keyNumChannels])):
+								self.headerDict[aIO.CORE_KEY_NUM_CHANNELS])):
 			sampleList = []
-			for i in range(self.headerDict[self.keyNumChannels]):
+			for i in range(self.headerDict[aIO.CORE_KEY_NUM_CHANNELS]):
 				sampleList.append(bufferUnpacked[(block * \
-					self.headerDict[self.keyNumChannels])+i])
+					self.headerDict[aIO.CORE_KEY_NUM_CHANNELS])+i])
 			nestedSampleList.append(sampleList)
 		return nestedSampleList
 	
@@ -282,11 +282,11 @@ class WriteWav(aIO.WriteAudio, WavBase):
 		if self.conversion or (not isinstance(readObj, ReadWav)):
 			# Populate core headerDict{} info based on conversion parameters
 			for key, value in self.conversionParameters.items():
-				if key == self.keyAudioFmtStr:
-					if value == self.formatStringFloat:
+				if key == aIO.CORE_KEY_FMT:
+					if value == aIO.FLOAT:
 						self.headerDict[self.keyAudioFmt] = \
 							self.wavFmtFloat
-					elif value == self.formatStringPCM:
+					elif value == aIO.PCM:
 						self.headerDict[self.keyAudioFmt] = \
 							self.wavFmtPCM
 				else:
@@ -295,27 +295,27 @@ class WriteWav(aIO.WriteAudio, WavBase):
 			# Fill in the remaining core headerDict{} info
 			# based on readObj.headerDict{}
 			coreKeys = [
-				self.keyAudioFmtStr, 
-				self.keyNumChannels, 
-				self.keyBitDepth, 
-				self.keyByteDepth, 
-				self.keySampleRate, 
-				self.keySamplesPerChannel
+				aIO.CORE_KEY_FMT, 
+				aIO.CORE_KEY_NUM_CHANNELS, 
+				aIO.CORE_KEY_BIT_DEPTH, 
+				aIO.CORE_KEY_BYTE_DEPTH, 
+				aIO.CORE_KEY_SAMPLE_RATE, 
+				aIO.CORE_KEY_SAMPLES_PER_CHANNEL
 			]
 			for key in coreKeys:
 				try:
-					if key == self.keyAudioFmtStr:
+					if key == aIO.CORE_KEY_FMT:
 						self.headerDict[self.keyAudioFmt]
 					else:
 						self.headerDict[key]
 				except KeyError:
-					if key == self.keyAudioFmtStr:
-						if readObj.headerDict[self.keyAudioFmtStr] == \
-							self.formatStringFloat:
+					if key == aIO.CORE_KEY_FMT:
+						if readObj.headerDict[aIO.CORE_KEY_FMT] == \
+							aIO.FLOAT:
 							self.headerDict[self.keyAudioFmt] = \
 								self.wavFmtFloat
-						elif readObj.headerDict[self.keyAudioFmtStr] == \
-							self.formatStringPCM:
+						elif readObj.headerDict[aIO.CORE_KEY_FMT] == \
+							aIO.PCM:
 							self.headerDict[self.keyAudioFmt] = \
 								self.wavFmtPCM
 					else:
@@ -323,46 +323,46 @@ class WriteWav(aIO.WriteAudio, WavBase):
 					self.headerDict[key] = readObj.headerDict[key]
 			# Calculate fields from above
 			self.headerDict[self.keyBlockAlign] = \
-				self.headerDict[self.keyByteDepth] * \
-				self.headerDict[self.keyNumChannels]
+				self.headerDict[aIO.CORE_KEY_BYTE_DEPTH] * \
+				self.headerDict[aIO.CORE_KEY_NUM_CHANNELS]
 			self.headerDict[self.keyByteRate] = \
 				self.headerDict[self.keyBlockAlign] * \
-				self.headerDict[self.keySampleRate]
-			# set core key self.keySigned
+				self.headerDict[aIO.CORE_KEY_SAMPLE_RATE]
+			# set core key aIO.CORE_KEY_SIGNED
 			if self.headerDict[self.keyAudioFmt] == self.wavFmtPCM and \
-				self.headerDict[self.keyByteDepth] == self.int8Size:
-				self.headerDict[self.keySigned] = False
+				self.headerDict[aIO.CORE_KEY_BYTE_DEPTH] == aIO.INT8_SIZE:
+				self.headerDict[aIO.CORE_KEY_SIGNED] = False
 			else:
-				self.headerDict[self.keySigned] = True
+				self.headerDict[aIO.CORE_KEY_SIGNED] = True
 			# init the struct fmt string
-			self.init_fmt_str()
+			self.init_struct_fmt_str()
 			
 			# Populate the remaining fields:
 			# CALCULATE INTERMEDIATE VALUES
 			factChunkSizeMultiplier = \
-				math.ceil(self.headerDict[self.keySamplesPerChannel] / 
+				math.ceil(self.headerDict[aIO.CORE_KEY_SAMPLES_PER_CHANNEL] / 
 						  (2**32))
 			dataChunkSize = \
-				int((self.headerDict[self.keySamplesPerChannel] + \
+				int((self.headerDict[aIO.CORE_KEY_SAMPLES_PER_CHANNEL] + \
 				reachBack) * \
-				self.headerDict[self.keyByteDepth] * \
-				self.headerDict[self.keyNumChannels])
+				self.headerDict[aIO.CORE_KEY_BYTE_DEPTH] * \
+				self.headerDict[aIO.CORE_KEY_NUM_CHANNELS])
 			# SET ID STRINGS
 			self.headerDict[self.keyChunkId] = self.riffChunkId
 			self.headerDict[self.keyFormatId] = self.waveId
 			self.headerDict[self.keySubchunk1Id] = self.fmtSubchunkId
 			# IF AUDIO FORMAT = PCM, BIT-DEPTH <= 16
 			if (self.headerDict[self.keyAudioFmt] == 
-				self.wavFmtPCM) and (self.headerDict[self.keyByteDepth] <= 
-										 self.int16Size):
+				self.wavFmtPCM) and (self.headerDict[aIO.CORE_KEY_BYTE_DEPTH] <= 
+										 aIO.INT16_SIZE):
 				self.headerDict[self.keySubchunk1Size] = self.fmtChunkSize16
 				self.headerDict[self.keySubchunk2Id] = self.dataSubchunkId
 				self.headerDict[self.keySubchunk2Size] = dataChunkSize
 			# IF AUDIO FORMAT = PCM, BIT-DEPTH = 24
 			# IN PROGRESS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			elif (self.headerDict[self.keyAudioFmt] == 
-				  self.wavFmtPCM) and (self.headerDict[self.keyByteDepth] == 
-				  					   self.int24Size):
+				  self.wavFmtPCM) and (self.headerDict[aIO.CORE_KEY_BYTE_DEPTH] == 
+				  					   aIO.INT24_SIZE):
 				pass
 			# IF AUDIO FORMAT = FLOAT
 			elif self.headerDict[self.keyAudioFmt] == self.wavFmtFloat:
@@ -370,9 +370,9 @@ class WriteWav(aIO.WriteAudio, WavBase):
 				self.headerDict[self.keyCbSize] = self.fmtExtensionSize0
 				self.headerDict[self.keySubchunk2Id] = self.factSubchunkId
 				self.headerDict[self.keySubchunk2Size] = \
-					int(self.int32Size * factChunkSizeMultiplier)
+					int(aIO.INT32_SIZE * factChunkSizeMultiplier)
 				self.headerDict[self.keyDwSampleLength] = \
-					self.headerDict[self.keySamplesPerChannel] + \
+					self.headerDict[aIO.CORE_KEY_SAMPLES_PER_CHANNEL] + \
 					reachBack
 				self.headerDict[self.keySubchunk3Id] = self.dataSubchunkId
 				self.headerDict[self.keySubchunk3Size] = dataChunkSize
@@ -398,8 +398,8 @@ class WriteWav(aIO.WriteAudio, WavBase):
 				self.headerDict[key] = value
 			# Calculate the size increase of file based on reachBack
 			reachBackAdd = int(reachBack * \
-				self.headerDict[self.keyByteDepth] * \
-				self.headerDict[self.keyNumChannels])
+				self.headerDict[aIO.CORE_KEY_BYTE_DEPTH] * \
+				self.headerDict[aIO.CORE_KEY_NUM_CHANNELS])
 			self.headerDict[self.keyChunkSize] += reachBackAdd
 			if self.headerDict[self.keySubchunk2Id] == self.dataSubchunkId:
 				self.headerDict[self.keySubchunk2Size] += reachBackAdd
@@ -417,41 +417,41 @@ class WriteWav(aIO.WriteAudio, WavBase):
 		"""
 		# Write chunk header and fmt subchunk
 		self.pack_and_write(writeStream, (
-			(self.packBigUTF, self.keyChunkId),
-			(self.packLittleUINT, self.keyChunkSize, self.int32Size),
-			(self.packBigUTF, self.keyFormatId),
-			(self.packBigUTF, self.keySubchunk1Id),
-			(self.packLittleUINT, self.keySubchunk1Size, self.int32Size),
-			(self.packLittleUINT, self.keyAudioFmt, self.int16Size),
-			(self.packLittleUINT, self.keyNumChannels, self.int16Size),
-			(self.packLittleUINT, self.keySampleRate, self.int32Size),
-			(self.packLittleUINT, self.keyByteRate, self.int32Size),
-			(self.packLittleUINT, self.keyBlockAlign, self.int16Size),
-			(self.packLittleUINT, self.keyBitDepth, self.int16Size)))
+			(aIO.BIG_UTF, self.keyChunkId),
+			(aIO.LITTLE_UINT, self.keyChunkSize, aIO.INT32_SIZE),
+			(aIO.BIG_UTF, self.keyFormatId),
+			(aIO.BIG_UTF, self.keySubchunk1Id),
+			(aIO.LITTLE_UINT, self.keySubchunk1Size, aIO.INT32_SIZE),
+			(aIO.LITTLE_UINT, self.keyAudioFmt, aIO.INT16_SIZE),
+			(aIO.LITTLE_UINT, aIO.CORE_KEY_NUM_CHANNELS, aIO.INT16_SIZE),
+			(aIO.LITTLE_UINT, aIO.CORE_KEY_SAMPLE_RATE, aIO.INT32_SIZE),
+			(aIO.LITTLE_UINT, self.keyByteRate, aIO.INT32_SIZE),
+			(aIO.LITTLE_UINT, self.keyBlockAlign, aIO.INT16_SIZE),
+			(aIO.LITTLE_UINT, aIO.CORE_KEY_BIT_DEPTH, aIO.INT16_SIZE)))
 		# Handle format subchunk extension
 		if self.headerDict[self.keySubchunk1Size] == self.fmtChunkSize18:
 			self.pack_and_write(writeStream, (
-				(self.packLittleUINT, self.keyCbSize, self.int16Size),))
+				(aIO.LITTLE_UINT, self.keyCbSize, aIO.INT16_SIZE),))
 		elif self.headerDict[self.keySubchunk1Size] == self.fmtChunkSize40:
 			self.pack_and_write(writeStream, (
-				(self.packLittleUINT, self.keyCbSize, self.int16Size),
-				(self.packLittleUINT, self.keyWValidBPS, self.int16Size),
-				(self.packLittleUINT, self.keyDwChannelMask, self.int32Size),
-				(self.packLittleUINT, self.keySubFmtAudioFmt, self.int16Size),
-				(self.packDIRECT, self.keySubFormat)))
+				(aIO.LITTLE_UINT, self.keyCbSize, aIO.INT16_SIZE),
+				(aIO.LITTLE_UINT, self.keyWValidBPS, aIO.INT16_SIZE),
+				(aIO.LITTLE_UINT, self.keyDwChannelMask, aIO.INT32_SIZE),
+				(aIO.LITTLE_UINT, self.keySubFmtAudioFmt, aIO.INT16_SIZE),
+				(aIO.DIRECT, self.keySubFormat)))
 		else:
 			pass
 		self.pack_and_write(writeStream, (
-			(self.packBigUTF, self.keySubchunk2Id),
-			(self.packLittleUINT, self.keySubchunk2Size, self.int32Size)))
+			(aIO.BIG_UTF, self.keySubchunk2Id),
+			(aIO.LITTLE_UINT, self.keySubchunk2Size, aIO.INT32_SIZE)))
 		# Conditionally handle fact subchunk, write data subchunk
 		# If fact subchunk is present
 		if self.headerDict[self.keySubchunk2Id] != self.dataSubchunkId:
 			self.pack_and_write(writeStream, (
-				(self.packLittleUINT, self.keyDwSampleLength, 
+				(aIO.LITTLE_UINT, self.keyDwSampleLength, 
 				lambda: self.headerDict[self.keySubchunk2Size]),
-				(self.packBigUTF, self.keySubchunk3Id),
-				(self.packLittleUINT, self.keySubchunk3Size, self.int32Size)))
+				(aIO.BIG_UTF, self.keySubchunk3Id),
+				(aIO.LITTLE_UINT, self.keySubchunk3Size, aIO.INT32_SIZE)))
 		else:
 			pass
 	
@@ -471,12 +471,12 @@ class WriteWav(aIO.WriteAudio, WavBase):
 		processedByteArray = bytearray()
 		# Disassemble nested list into tuple
 		for block in range(len(processedSampleNestedList)):
-			for channel in range(self.headerDict[self.keyNumChannels]):
+			for channel in range(self.headerDict[aIO.CORE_KEY_NUM_CHANNELS]):
 				intTupleList.append(processedSampleNestedList[block][channel])
 		intTuple = tuple(intTupleList)
 		self.headerDict[self.keyStructMultiplier] = len(intTuple)
 		# Pack
-		processedByteArray = struct.pack(self.struct_fmt_str(), *intTuple)
+		processedByteArray = struct.pack(self.get_struct_fmt_str(), *intTuple)
 		return processedByteArray
 	
 	# ------------------------------------------------------------------------

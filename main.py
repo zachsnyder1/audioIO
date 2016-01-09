@@ -9,8 +9,8 @@ from sys import argv
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.abspath(__file__)))
 sys.path.append(SCRIPT_DIR)
-from src.engine import engine
-from src.io import wavIO as wIO
+from src.framework import engine
+from src.framework import wavIO as wIO
 
 if __name__ == '__main__':
 
@@ -22,7 +22,7 @@ if __name__ == '__main__':
 		return sampleNestedList
 	
 	readObj = wIO.ReadWav(argv[1])
-	writeObj = wIO.WriteWav(argv[2], format='cool', bitDepth=24)
+	writeObj = wIO.WriteWav(argv[2], format='float', bitDepth=32)
 	processor = engine.Engine(readObj, writeObj, cb, format='float', 
 							reachBack=44100)
 	processor.process()

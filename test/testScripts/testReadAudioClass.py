@@ -7,7 +7,7 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(),
 	os.path.expanduser(__file__))))
 PACKAGE_PATH = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_ROOT))
 sys.path.append(PACKAGE_PATH)
-from src.io import audioIO as aIO
+from src.framework import audioIO as aIO
 
 # Set a read file for testing
 TEST_DATA_DIR = os.path.normpath(
@@ -254,9 +254,9 @@ class ReadAndAssignTestMethods(unittest.TestCase):
 			with self.subTest(utf_str = parameterList):
 				# handle endianness
 				if parameterList[1] == 'little':
-					assignStr = self.readObj.assignLittleUTF
+					assignStr = aIO.LITTLE_UTF
 				elif parameterList[1] == 'big':
-					assignStr = self.readObj.assignBigUTF
+					assignStr = aIO.BIG_UTF
 				# write utf to file
 				with open(TEST_DATA_DIR + 
 						  '/test_read_and_assign.txt', 'wb') as writeStream:
@@ -270,10 +270,10 @@ class ReadAndAssignTestMethods(unittest.TestCase):
 												 ((assignStr, 
 												 'test', 
 												 len(parameterList[0])),))
-				if assignStr == self.readObj.assignBigUTF:
+				if assignStr == aIO.BIG_UTF:
 					self.assertEqual(self.readObj.headerDict['test'], 
 									 parameterList[0])
-				elif assignStr == self.readObj.assignLittleUTF:
+				elif assignStr == aIO.LITTLE_UTF:
 					self.assertEqual(self.readObj.headerDict['test'], 
 									 parameterList[0][::-1])
 	
@@ -302,14 +302,14 @@ class ReadAndAssignTestMethods(unittest.TestCase):
 				integer = int(2**((parameterList[0] * 8) - 1) - 1)
 				# handle assign string
 				if parameterList[1] == 'little' and parameterList[2] == True:
-					assignStr = self.readObj.assignLittleUINT
+					assignStr = aIO.LITTLE_INT
 				elif parameterList[1] == 'little' and \
 					parameterList[2] == False:
-					assignStr = self.readObj.assignLittleINT
+					assignStr = aIO.LITTLE_UINT
 				elif parameterList[1] == 'big' and parameterList[2] == True:
-					assignStr = self.readObj.assignBigUINT
+					assignStr = aIO.BIG_INT
 				elif parameterList[1] == 'big' and parameterList[2] == False:
-					assignStr = self.readObj.assignBigINT
+					assignStr = aIO.BIG_UINT
 				else:
 					raise
 				# write int to file
@@ -394,25 +394,25 @@ class ReadAndAssignTestMethods(unittest.TestCase):
 					# handle assign string
 					if parameterList[1] == 'little' and \
 						parameterList[2] == True:
-						assignStr = self.readObj.assignLittleUINT
+						assignStr = aIO.LITTLE_INT
 					elif parameterList[1] == 'little' and \
 						parameterList[2] == False:
-						assignStr = self.readObj.assignLittleINT
+						assignStr = aIO.LITTLE_UINT
 					elif parameterList[1] == 'big' and \
 						parameterList[2] == True:
-						assignStr = self.readObj.assignBigUINT
+						assignStr = aIO.BIG_INT
 					elif parameterList[1] == 'big' and \
 						parameterList[2] == False:
-						assignStr = self.readObj.assignBigINT
+						assignStr = aIO.BIG_UINT
 					else:
 						raise
 				elif isinstance(parameterList[1], str):
 					leng = len(parameterList[0])
 					# handle endianness
 					if parameterList[1] == 'little':
-						assignStr = self.readObj.assignLittleUTF
+						assignStr = aIO.LITTLE_UTF
 					elif parameterList[1] == 'big':
-						assignStr = self.readObj.assignBigUTF
+						assignStr = aIO.BIG_UTF
 					else:
 						raise
 				else:
@@ -503,25 +503,25 @@ class ReadAndAssignTestMethods(unittest.TestCase):
 					# handle assign string
 					if parameterList[1] == 'little' and \
 						parameterList[2] == True:
-						assignStr = self.readObj.assignLittleUINT
+						assignStr = aIO.LITTLE_UINT
 					elif parameterList[1] == 'little' and \
 						parameterList[2] == False:
-						assignStr = self.readObj.assignLittleINT
+						assignStr = aIO.LITTLE_INT
 					elif parameterList[1] == 'big' and \
 						parameterList[2] == True:
-						assignStr = self.readObj.assignBigUINT
+						aIO.BIG_UINT
 					elif parameterList[1] == 'big' and \
 						parameterList[2] == False:
-						assignStr = self.readObj.assignBigINT
+						aIO.BIG_INT
 					else:
 						raise
 				elif isinstance(parameterList[1], str):
 					leng = len(parameterList[0])
 					# handle endianness
 					if parameterList[1] == 'little':
-						assignStr = self.readObj.assignLittleUTF
+						assignStr = aIO.LITTLE_UTF
 					elif parameterList[1] == 'big':
-						assignStr = self.readObj.assignBigUTF
+						assignStr = aIO.BIG_UTF
 					else:
 						raise
 				else:

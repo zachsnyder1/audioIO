@@ -7,8 +7,9 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(),
 	os.path.expanduser(__file__))))
 PACKAGE_PATH = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_ROOT))
 sys.path.append(PACKAGE_PATH)
-from src.io import wavIO as wIO
-from src.engine import engine
+from src.framework import audioIO as aIO
+from src.framework import wavIO as wIO
+from src.framework import engine
 
 TEST_DATA_DIR = os.path.normpath(
 					os.path.dirname(
@@ -46,11 +47,11 @@ class WavIOEngineInitTestMethods(unittest.TestCase):
 		self.assertIsInstance(writeAudioObj, wIO.WriteWav)
 		self.assertEqual(writeAudioObj.conversion, True)
 		self.assertEqual(writeAudioObj.conversionParameters, {
-			wIO.WriteWav.keyAudioFmtStr: 'PCM',
-			wIO.WriteWav.keyNumChannels: 2,
-			wIO.WriteWav.keyBitDepth: 16,
-			wIO.WriteWav.keyByteDepth: 2,
-			wIO.WriteWav.keySampleRate: 44100
+			aIO.CORE_KEY_FMT: 'PCM',
+			aIO.CORE_KEY_NUM_CHANNELS: 2,
+			aIO.CORE_KEY_BIT_DEPTH: 16,
+			aIO.CORE_KEY_BYTE_DEPTH: 2,
+			aIO.CORE_KEY_SAMPLE_RATE: 44100
 		})
 
 
@@ -69,29 +70,29 @@ class WavInitHeaderTestMethods(unittest.TestCase):
 										numChannels=2, bitDepth=16, 
 										sampleRate=44100)
 		
-		readAudioObj.headerDict[readAudioObj.keySamplesPerChannel] = 100
+		readAudioObj.headerDict[aIO.CORE_KEY_SAMPLES_PER_CHANNEL] = 100
 		writeAudioObj.init_header(readAudioObj, reachBack)
 		
 		self.assertEqual(writeAudioObj.headerDict, {
-			writeAudioObj.keySamplesPerChannel: 100,
+			aIO.CORE_KEY_SAMPLES_PER_CHANNEL: 100,
 			writeAudioObj.keyChunkId: writeAudioObj.riffChunkId,
 			writeAudioObj.keyChunkSize: 444,
 			writeAudioObj.keyFormatId: writeAudioObj.waveId,
 			writeAudioObj.keySubchunk1Id: writeAudioObj.fmtSubchunkId,
 			writeAudioObj.keySubchunk1Size: writeAudioObj.fmtChunkSize16,
 			writeAudioObj.keyAudioFmt: writeAudioObj.wavFmtPCM,
-			writeAudioObj.keyNumChannels: 2,
-			writeAudioObj.keySampleRate: 44100,
+			aIO.CORE_KEY_NUM_CHANNELS: 2,
+			aIO.CORE_KEY_SAMPLE_RATE: 44100,
 			writeAudioObj.keyByteRate: 4*44100,
 			writeAudioObj.keyBlockAlign: 4,
-			writeAudioObj.keyBitDepth: 16,
-			writeAudioObj.keyByteDepth: 2,
+			aIO.CORE_KEY_BIT_DEPTH: 16,
+			aIO.CORE_KEY_BYTE_DEPTH: 2,
 			writeAudioObj.keySubchunk2Id: writeAudioObj.dataSubchunkId,
 			writeAudioObj.keySubchunk2Size: 400,
 			writeAudioObj.keyStructMultiplier: '',
 			writeAudioObj.keyStructFmtChar: 'h',
-			writeAudioObj.keySigned: True,
-			writeAudioObj.keyAudioFmtStr: 'PCM'
+			aIO.CORE_KEY_SIGNED: True,
+			aIO.CORE_KEY_FMT: 'PCM'
 		})
 	
 	def test_valid_conversion_parameters_float(self):
@@ -104,23 +105,23 @@ class WavInitHeaderTestMethods(unittest.TestCase):
 										numChannels=2, bitDepth=32, 
 										sampleRate=44100)
 		
-		readAudioObj.headerDict[readAudioObj.keySamplesPerChannel] = 100
+		readAudioObj.headerDict[aIO.CORE_KEY_SAMPLES_PER_CHANNEL] = 100
 		writeAudioObj.init_header(readAudioObj, reachBack)
 		
 		self.assertEqual(writeAudioObj.headerDict, {
-			writeAudioObj.keySamplesPerChannel: 100,
+			aIO.CORE_KEY_SAMPLES_PER_CHANNEL: 100,
 			writeAudioObj.keyChunkId: writeAudioObj.riffChunkId,
 			writeAudioObj.keyChunkSize: 858,
 			writeAudioObj.keyFormatId: writeAudioObj.waveId,
 			writeAudioObj.keySubchunk1Id: writeAudioObj.fmtSubchunkId,
 			writeAudioObj.keySubchunk1Size: writeAudioObj.fmtChunkSize18,
 			writeAudioObj.keyAudioFmt: writeAudioObj.wavFmtFloat,
-			writeAudioObj.keyNumChannels: 2,
-			writeAudioObj.keySampleRate: 44100,
+			aIO.CORE_KEY_NUM_CHANNELS: 2,
+			aIO.CORE_KEY_SAMPLE_RATE: 44100,
 			writeAudioObj.keyByteRate: 8*44100,
 			writeAudioObj.keyBlockAlign: 8,
-			writeAudioObj.keyBitDepth: 32,
-			writeAudioObj.keyByteDepth: 4,
+			aIO.CORE_KEY_BIT_DEPTH: 32,
+			aIO.CORE_KEY_BYTE_DEPTH: 4,
 			writeAudioObj.keyCbSize: 0,
 			writeAudioObj.keySubchunk2Id: writeAudioObj.factSubchunkId,
 			writeAudioObj.keySubchunk2Size: 4,
@@ -129,8 +130,8 @@ class WavInitHeaderTestMethods(unittest.TestCase):
 			writeAudioObj.keySubchunk3Size: 800,
 			writeAudioObj.keyStructMultiplier: '',
 			writeAudioObj.keyStructFmtChar: 'f',
-			writeAudioObj.keySigned: True,
-			writeAudioObj.keyAudioFmtStr: 'float'
+			aIO.CORE_KEY_SIGNED: True,
+			aIO.CORE_KEY_FMT: 'float'
 		})
 
 

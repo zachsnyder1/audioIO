@@ -2,6 +2,43 @@
 Contains audioIO base classes, including exception classes.
 """
 
+
+# <<<------ CONSTANTS ----->>>
+	
+# Audio Formats
+FLOAT = 'float'
+PCM = 'PCM'
+	
+# Core headerDict keys
+CORE_KEY_FMT = 'audioFormatStr'
+CORE_KEY_SIGNED = 'signed'
+CORE_KEY_NUM_CHANNELS = 'numChannels'
+CORE_KEY_BIT_DEPTH = 'bitDepth'
+CORE_KEY_BYTE_DEPTH = 'byteDepth'
+CORE_KEY_SAMPLE_RATE = 'sampleRate'
+CORE_KEY_SAMPLES_PER_CHANNEL = 'samplesPerChannel'
+	
+# Assignment and pack strings 
+# for self.read_and_assign(), self.pack_and_write()
+LITTLE_UTF = 'little_utf'
+BIG_UTF = 'big_utf'
+LITTLE_INT = 'little_int'
+BIG_INT = 'big_int'
+LITTLE_UINT = 'little_uint'
+BIG_UINT = 'big_uint'
+DIRECT = 'direct'
+	
+# Sizes
+SAMPLES_PER_BUFFER = 1024   # Number of samples per buffer
+BYTE_SIZE = 8    # Number of bits per byte
+INT32_SIZE = 4   # Number of bytes in a 32-bit integer
+INT24_SIZE = 3   # Number of bytes in a 24-bit integer
+INT16_SIZE = 2   # Number of bytes in a 16-bit integer
+INT8_SIZE = 1    # Number of bytes in a 8-bit integer
+FLOAT_SIZE = 4   # Number of bytes in a single precision float
+DOUBLE_SIZE = 8  # Number of bytes in a double precision float
+
+
 # Exception classes:
 class ReadFileEmpty(Exception):
 	"""
@@ -31,62 +68,8 @@ class PackIdError(Exception):
 	pass
 
 
-# Base classes:
-class AudioIOBase:
-	"""
-	Base class for audio IO.  Consists of constants that are
-	used in all inheriting 'read' and 'write' classes.
-	"""
-	# CONSTANTS:
-	
-	# Strings:
-	# Endianness
-	littleEndian = 'little'
-	bigEndian = 'big'
-	# Encoding
-	utf8 = 'utf-8'
-	# Format
-	formatStringFloat = 'float'
-	formatStringPCM = 'PCM'
-	# Core headerDict keys
-	keyAudioFmtStr = 'audioFormatStr'
-	keySigned = 'signed'
-	keyNumChannels = 'numChannels'
-	keyBitDepth = 'bitDepth'
-	keyByteDepth = 'byteDepth'
-	keySampleRate = 'sampleRate'
-	keySamplesPerChannel = 'samplesPerChannel'
-	# Assignment and pack strings 
-	# for self.read_and_assign(), self.pack_and_write()
-	assignLittleUTF = 'little_utf'
-	assignBigUTF = 'big_utf'
-	assignLittleINT = 'little_int'
-	assignBigINT = 'big_int'
-	assignLittleUINT = 'little_uint'
-	assignBigUINT = 'big_uint'
-	assignDIRECT = 'direct'
-	packLittleUTF = 'little_utf'
-	packBigUTF = 'big_utf'
-	packLittleINT = 'little_int'
-	packBigINT = 'big_int'
-	packLittleUINT = 'little_uint'
-	packBigUINT = 'big_uint'
-	packDIRECT = 'direct'
-	# Sizes
-	reset = 0       # To reset count variables / seek to beginning of file
-	samplesPerBuffer = 1024   # Number of samples per buffer
-	chunkIdSize = 4   # Number of bytes in chunkID
-	byteSize = 8    # Number of bits per byte
-	int32Size = 4   # Number of bytes in a 32-bit integer
-	int24Size = 3   # Number of bytes in a 24-bit integer
-	int16Size = 2   # Number of bytes in a 16-bit integer
-	int8Size = 1    # Number of bytes in a 8-bit integer
-	floatSize = 4   # Number of bytes in a single precision float
-	doubleSize = 8  # Number of bytes in a double precision float
 
-
-
-class ReadAudio(AudioIOBase):
+class ReadAudio:
 	"""
 	This base class for reading audio provides a template and helper
 	functions for inheriting classes.  Each file type that is supported
@@ -161,8 +144,8 @@ class ReadAudio(AudioIOBase):
 		Accepts:
 		
 		1) numBytes   ==> The size of the binary slice in bytes.
-		2) byteorder ==> The byteorder of the binary. Either self.littleEndian
-						  or self.bigEndian; default=self.littleEndian.
+		2) byteorder ==> The byteorder of the binary. Either 'little'
+						  or 'big'; default='little'.
 		3) signed     ==> Bool indicates whether or not the integer is signed.
 						  Default=False.
 		
@@ -183,18 +166,18 @@ class ReadAudio(AudioIOBase):
 		
 		Returns the decoded UTF-8 string.
 		"""
-		if byteorder == self.bigEndian:
+		if byteorder == 'big':
 			binary = self.byteArray[self.readOffset:
 									(self.readOffset + numBytes)]
 			self.readOffset += numBytes
-			return binary.decode(self.utf8)
-		elif byteorder == self.littleEndian:
+			return binary.decode('utf-8')
+		elif byteorder == 'little':
 			binary = bytearray()
 			for i in range(numBytes):
 				binary += self.byteArray[(self.readOffset + numBytes) - (1+i):
 											(self.readOffset + numBytes) - i]
 			self.readOffset += numBytes
-			return binary.decode(self.utf8)
+			return binary.decode('utf-8')
 	
 	def read_and_assign(self, readStream, readLen, assignmentNestedTuple):
 		"""
@@ -218,23 +201,23 @@ class ReadAudio(AudioIOBase):
 		3) assignmentNestedTuple
 			==> a nested tuple, where each inner tuple contains 3 values:
 			
-			  1) assignmentIdStr - (self.assignBigUTF -> unpacks bin to
+			  1) assignmentIdStr - (BIG_UTF -> unpacks bin to
 			  						big-endian UTF-8 str)
-			  					 - (self.assignLittleUTF -> unpacks bin to
+			  					 - (LITTLE_UTF -> unpacks bin to
 			  					 	little-endian UTF-8 str)
-					   			 - (self.assignBigUINT -> unpacks bin to
+					   			 - (BIG_UINT -> unpacks bin to
 					   			 	big-endian unisgned int)
-					   			 - (self.assignLittleUINT -> unpacks bin to
+					   			 - (LITTLE_UINT -> unpacks bin to
 					   			 	little-endian unisgned int)
-					   			 - (self.assignBigINT -> unpacks bin to
+					   			 - (BIG_INT -> unpacks bin to
 					   			 	big-endian signed int)
-					   			 - (self.assignLittleINT -> unpacks bin to
+					   			 - (LITTLE_INT -> unpacks bin to
 					   			 	little-endian signed int)
-					   			 - (self.assignDIRECT -> assigns val 2 
+					   			 - (DIRECT -> assigns val 2 
 					   			 	directly as val 3)
 			  2) headerKey  -  The key in self.headerDict{} to which the value
 			  				   will be assigned.
-			  3) If assignmentIdStr == self.assignDIRECT:
+			  3) If assignmentIdStr == DIRECT:
 			  			- The value that will be assigned to headerKey in the
 			  			  headerDict.
 			  	 else:
@@ -249,14 +232,14 @@ class ReadAudio(AudioIOBase):
 		Example of assignmentNestedTuple:
 		
 			(
-				(self.assignBigUTF, self.keyChunkId, self.int32Size),
-				(self.assignLittleUNIT, self.keyChunkSize, self.int16Size),
-				(self.assignDIRECT, 'foo', 'bar')
+				(BIG_UTF, self.keyChunkId, INT32_SIZE),
+				(self.assignLittleUNIT, self.keyChunkSize, INT16_SIZE),
+				(DIRECT, 'foo', 'bar')
 			)
 		"""
 		# Read from file
 		self.byteArray = readStream.read(readLen)
-		self.readOffset = self.reset
+		self.readOffset = 0
 		# Assert that the read worked
 		if not self.byteArray:
 			raise ReadFileEmpty
@@ -265,34 +248,34 @@ class ReadAudio(AudioIOBase):
 			# assignment string, and on whether or not the third value
 			# is a lambda expression:
 			for assignment in assignmentNestedTuple:
-				if assignment[0] == self.assignBigUTF:
+				if assignment[0] == BIG_UTF:
 					if callable(assignment[2]):
 						self.headerDict[assignment[1]] = \
 							self.unpack_utf(assignment[2]())
 					else:
 						self.headerDict[assignment[1]] = \
 							self.unpack_utf(assignment[2])
-				elif assignment[0] == self.assignLittleUTF:
+				elif assignment[0] == LITTLE_UTF:
 					if callable(assignment[2]):
 						self.headerDict[assignment[1]] = \
 							self.unpack_utf(assignment[2](), 
-											byteorder=self.littleEndian)
+											byteorder='little')
 					else:
 						self.headerDict[assignment[1]] = \
 							self.unpack_utf(assignment[2], 
-											byteorder=self.littleEndian)
-				elif assignment[0] == self.assignBigUINT:
+											byteorder='little')
+				elif assignment[0] == BIG_UINT:
 					if callable(assignment[2]):
 						self.headerDict[assignment[1]] = \
 							self.unpack_int(assignment[2](), 
-											byteorder=self.bigEndian, 
+											byteorder='big', 
 											signed=False)
 					else:
 						self.headerDict[assignment[1]] = \
 							self.unpack_int(assignment[2], 
-											byteorder=self.bigEndian, 
+											byteorder='big', 
 											signed=False)
-				elif assignment[0] == self.assignLittleUINT:
+				elif assignment[0] == LITTLE_UINT:
 					if callable(assignment[2]):
 						self.headerDict[assignment[1]] = \
 							self.unpack_int(assignment[2](), 
@@ -301,18 +284,18 @@ class ReadAudio(AudioIOBase):
 						self.headerDict[assignment[1]] = \
 							self.unpack_int(assignment[2], 
 											signed=False)
-				elif assignment[0] == self.assignBigINT:
+				elif assignment[0] == BIG_INT:
 					if callable(assignment[2]):
 						self.headerDict[assignment[1]] = \
 							self.unpack_int(assignment[2](), 
-											byteorder=self.bigEndian, 
+											byteorder='big', 
 											signed=True)
 					else:
 						self.headerDict[assignment[1]] = \
 							self.unpack_int(assignment[2], 
-											byteorder=self.bigEndian, 
+											byteorder='big', 
 											signed=True)
-				elif assignment[0] == self.assignLittleINT:
+				elif assignment[0] == LITTLE_INT:
 					if callable(assignment[2]):
 						self.headerDict[assignment[1]] = \
 							self.unpack_int(assignment[2](),
@@ -321,7 +304,7 @@ class ReadAudio(AudioIOBase):
 						self.headerDict[assignment[1]] = \
 							self.unpack_int(assignment[2], 
 											signed=True)
-				elif assignment[0] == self.assignDIRECT:
+				elif assignment[0] == DIRECT:
 					if callable(assignment[2]):
 						self.headerDict[assignment[1]] = assignment[2]()
 					else:
@@ -332,7 +315,7 @@ class ReadAudio(AudioIOBase):
 		self.headerLen += readLen
 
 
-class WriteAudio(AudioIOBase):
+class WriteAudio:
 	"""
 	This base class for writing audio provides a template and helper
 	functions for inheriting classes.  Each file type that is supported
@@ -377,16 +360,16 @@ class WriteAudio(AudioIOBase):
 		self.conversionParameters = {}
 		self.conversion = False
 		if format:
-			self.conversionParameters[self.keyAudioFmtStr] = format
+			self.conversionParameters[CORE_KEY_FMT] = format
 		if numChannels:
-			self.conversionParameters[self.keyNumChannels] = int(numChannels)
+			self.conversionParameters[CORE_KEY_NUM_CHANNELS] = int(numChannels)
 		if bitDepth:
-			self.conversionParameters[self.keyBitDepth] = int(bitDepth)
-			self.conversionParameters[self.keyByteDepth] = \
-				int(self.conversionParameters[self.keyBitDepth] / 
-					self.byteSize)
+			self.conversionParameters[CORE_KEY_BIT_DEPTH] = int(bitDepth)
+			self.conversionParameters[CORE_KEY_BYTE_DEPTH] = \
+				int(self.conversionParameters[CORE_KEY_BIT_DEPTH] / 
+					BYTE_SIZE)
 		if sampleRate:
-			self.conversionParameters[self.keySampleRate] = int(sampleRate)
+			self.conversionParameters[CORE_KEY_SAMPLE_RATE] = int(sampleRate)
 		if self.conversionParameters:
 			self.conversion = True
 		# Init other vars
@@ -453,31 +436,31 @@ class WriteAudio(AudioIOBase):
 		1) writeStream  ==> The open write file.
 		2) packNestedTuple
 			==> a nested tuple, where each inner tuple contains 3 values,
-			    unless packIdStr == self.packDIRECT or self.packBigUTF or
-			    self.packLittleUTF, in which case it contains 2 values:
+			    unless packIdStr == DIRECT or BIG_UTF or
+			    LITTLE_UTF, in which case it contains 2 values:
 			
-			  1) packIdStr - (self.packBigUTF -> 
+			  1) packIdStr - (BIG_UTF -> 
 			  					packs big-endian UTF-8 str to bin)
-			  			   - (self.packLittleUTF -> 
+			  			   - (LITTLE_UTF -> 
 			  			   		packs little-endian UTF-8 str to bin)
-					   	   - (self.packBigUINT -> 
+					   	   - (BIG_UINT -> 
 					   	   		packs big-endian unisgned int to bin)
-					   	   - (self.packLittleUINT -> 
+					   	   - (LITTLE_UINT -> 
 					   	   		packs little-endian unisgned int to bin)
-					   	   - (self.packBigINT -> 
+					   	   - (BIG_INT -> 
 					   	   		packs big-endian signed int to bin)
-					   	   - (self.packLittleINT -> 
+					   	   - (LITTLE_INT -> 
 					   	   		packs little-endian signed int to bin)
-					   	   - (self.packDIRECT -> 
+					   	   - (DIRECT -> 
 					   	   		writes bin stored in headerDict as is)
 			  2) headerKey  
-			  		If packIdStr == self.packDIRECT:
+			  		If packIdStr == DIRECT:
 			  				-  The binary string that is to be written
 			  				   directly to file.
-			  		elif packIdStr == self.packBigUTF:
+			  		elif packIdStr == BIG_UTF:
 			  				-  The UTF string to be written to file in
 			  					big-endian byte order.
-			  		elif packIdStr == self.packLittleUTF:
+			  		elif packIdStr == LITTLE_UTF:
 			  				-  The UTF string to be written to file in
 			  					little-endian byte order.
 			  		else:
@@ -492,9 +475,9 @@ class WriteAudio(AudioIOBase):
 		Example of packNestedTuple:
 		
 			(
-				(self.packBigUTF, 'RIFF',
-				(self.packUNIT, self.keyChunkSize, self.int16Size),
-				(self.packDIRECT, b'foo')
+				(BIG_UTF, 'RIFF',
+				(self.packUNIT, self.keyChunkSize, INT16_SIZE),
+				(DIRECT, b'foo')
 			)
 		"""
 		# Init an empty bytearray object
@@ -502,65 +485,65 @@ class WriteAudio(AudioIOBase):
 		# For each tuple 'directive', pack the input into binary
 		# and assign to the bytearray
 		for directive in packNestedTuple:
-			if directive[0] == self.packBigUTF:
+			if directive[0] == BIG_UTF:
 				self.byteArray += \
-					self.headerDict[directive[1]].encode(self.utf8)
-			elif directive[0] == self.packLittleUTF:
+					self.headerDict[directive[1]].encode('utf-8')
+			elif directive[0] == LITTLE_UTF:
 				self.byteArray += \
-					self.headerDict[directive[1]][::-1].encode(self.utf8)
-			elif directive[0] == self.packBigUINT:
+					self.headerDict[directive[1]][::-1].encode('utf-8')
+			elif directive[0] == BIG_UINT:
 				if callable(directive[2]):
 					self.byteArray += \
 						self.headerDict[directive[1]].\
 							to_bytes(directive[2](), 
-										byteorder=self.bigEndian, 
+										byteorder='big', 
 										signed=False)
 				else:
 					self.byteArray += \
 						self.headerDict[directive[1]].\
 							to_bytes(directive[2], 
-										byteorder=self.bigEndian, 
+										byteorder='big', 
 										signed=False)
-			elif directive[0] == self.packLittleUINT:
+			elif directive[0] == LITTLE_UINT:
 				if callable(directive[2]):
 					self.byteArray += \
 						self.headerDict[directive[1]].\
 							to_bytes(directive[2](), 
-										byteorder=self.littleEndian, 
+										byteorder='little', 
 										signed=False)
 				else:
 					self.byteArray += \
 						self.headerDict[directive[1]].\
 							to_bytes(directive[2], 
-										byteorder=self.littleEndian, 
+										byteorder='little', 
 										signed=False)
-			elif directive[0] == self.packBigINT:
+			elif directive[0] == BIG_INT:
 				if callable(directive[2]):
 					self.byteArray += \
 						self.headerDict[directive[1]].\
 							to_bytes(directive[2](), 
-										byteorder=self.bigEndian, 
+										byteorder='big', 
 										signed=True)
 				else:
 					self.byteArray += \
 						self.headerDict[directive[1]].\
 							to_bytes(directive[2], 
-										byteorder=self.bigEndian, 
+										byteorder='big', 
 										signed=True)
-			elif directive[0] == self.packLittleINT:
+			elif directive[0] == LITTLE_INT:
 				if callable(directive[2]):
 					self.byteArray += \
 						self.headerDict[directive[1]].\
 							to_bytes(directive[2](), 
-										byteorder=self.littleEndian, 
+										byteorder='little', 
 										signed=True)
 				else:
 					self.byteArray += \
 						self.headerDict[directive[1]].\
 							to_bytes(directive[2], 
-										byteorder=self.littleEndian, 
+										byteorder='little', 
 										signed=True)
-			elif directive[0] == self.packDIRECT:
+			elif directive[0] == DIRECT:
 				if callable(directive[1]):
 					self.byteArray += directive[1]()
 				else:
