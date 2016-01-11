@@ -2,3 +2,4 @@
 **__pycache__/
 /test/testData/**
 /test/testLogs/**
+/main.py
