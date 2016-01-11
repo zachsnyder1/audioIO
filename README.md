@@ -16,7 +16,7 @@ stage.  Why not keep it simple for now?
 ## How?
 
 ```python
-from src.framework import engine
+from audioIO.src.framework import engine
 
 def my_algorithm(engineObj, sampleNestedList):
   # Do something with the samples...
