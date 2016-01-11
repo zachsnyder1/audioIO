@@ -13,6 +13,9 @@ from . import enginehelper as helper
 
 # <<<----- CONSTANTS: ----->>>
 
+# supported file types:
+WAV = 'WAV'
+
 # options dictionary keys
 OUTPUT_FMT = 'output_format'
 OUTPUT_NUM_CHANNELS = 'output_num_channels'
@@ -82,7 +85,7 @@ class BaseEngine:
 			except KeyError:
 				self.options[key] = DEFAULT
 		
-		# Replace defaults in self.options dictionary:
+		# Replace specific default(s) in self.options dictionary:
 		defaultMap = {
 			PLUGIN_REACH_BACK: 0,
 		}
@@ -287,6 +290,8 @@ class BaseEngine:
 
 class FileToFileEngine(BaseEngine):
 	"""
+	Concrete engine for applying plugin to input file and outputing
+	to a file (hence file-to-file).
 	"""
 	def initializeIO(self, inputEntity, outputEntity):
 		"""
@@ -301,7 +306,7 @@ class FileToFileEngine(BaseEngine):
 		2) outputEntity ==>  The output entity passed to the Engine during
 							 initialization.
 		"""
-		# <<<--- VALIDATION --->>>
+		# <<<--- BASIC VALIDATION --->>>
 		# make sure I/O entities are valid file paths
 		# input entity:
 		if isinstance(inputEntity, str):
@@ -317,43 +322,21 @@ class FileToFileEngine(BaseEngine):
 		else:
 			pass
 		
-		# Make sure extensions are supported by the framework
-		inputValid = False  # BOOL: validity of input file extension
-		outputValid = False # BOOL: validity of output file extension
+		# <<<--- INSTANTIATION, INITIALIZATION --->>>
 		# regex search patterns for all valid file extensions
-		validFileExt = [
-			r'.*[.]wav$',
-		]
-		# search paths for extensions
-		for extension in validFileExt:
-			if re.search(extension, inputEntity):
-				inputValid = True
-			else:
-				pass
-			if re.search(extension, outputEntity):
-				outputValid = True
-			else:
-				pass
-		
-		# raise exceptions if input/output entities not valid
-		if inputValid:
-			pass
+		validFileExt = {
+			WAV: r'.*[.]wav$',
+		}
+		# instantiate correct audio input class:
+		if re.search(validFileExt[WAV], inputEntity):
+			self.audioInput = wavIO.ReadWav(inputEntity)
 		else:
 			errorMsg = "{} file type not supported".format(inputEntity)
 			raise InvalidInput(errorMsg)
-		if outputValid:
-			pass
-		else:
-			errorMsg = "{} file type not supported".format(outputEntity)
-			raise InvalidOutput(errorMsg)
-		
-		# <<<--- INSTANTIATION, INITIALIZATION --->>>
-		# Audio input object first:
-		self.audioInput = wavIO.ReadWav(inputEntity)
+		# initialize the audio input:
 		with open(inputEntity, 'rb') as readStream:
 			self.audioInput.read_header(readStream)
-
-		# Replace defaults in self.options dictionary:
+		# replace defaults in self.options dictionary:
 		defaultMap = {
 			PLUGIN_FMT: baseIO.CORE_KEY_FMT,
 			OUTPUT_FMT: baseIO.CORE_KEY_FMT,
@@ -366,15 +349,18 @@ class FileToFileEngine(BaseEngine):
 				self.options[key] = self.audioInput.headerDict[defaultMap[key]]
 			else:
 				pass
-		
-		# Now create audio output object:
-		self.audioOutput = wavIO.WriteWav(
-			outputEntity, 
-			format=self.options[OUTPUT_FMT],
-			numChannels=self.options[OUTPUT_NUM_CHANNELS],
-			bitDepth=self.options[OUTPUT_BIT_DEPTH],
-			sampleRate=self.options[OUTPUT_SAMPLE_RATE])
-		# and initialize:
+		# instantiate correct audio output class:
+		if re.search(validFileExt[WAV], outputEntity):
+			self.audioOutput = wavIO.WriteWav(
+				outputEntity, 
+				self.options[OUTPUT_FMT],
+				self.options[OUTPUT_NUM_CHANNELS],
+				self.options[OUTPUT_BIT_DEPTH],
+				self.options[OUTPUT_SAMPLE_RATE])
+		else:
+			errorMsg = "{} file type not supported".format(outputEntity)
+			raise InvalidOutput(errorMsg)
+		# initialize:
 		self.audioOutput.init_header(
 			self.audioInput, self.options[PLUGIN_REACH_BACK])
 

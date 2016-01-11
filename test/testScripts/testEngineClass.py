@@ -534,7 +534,7 @@ class ReachBackTestMethods(unittest.TestCase):
 	dataNest = []  # For accumulating nested sample data over
 				   # multiple algorithm calls
 	
-	def plugin_cb(self, pIObj, sampleNestedList):
+	def plugin_cb(self, engineObj, sampleNestedList):
 		return sampleNestedList
 	
 	def reachback_cb_closure(self, reachBack):
@@ -542,11 +542,11 @@ class ReachBackTestMethods(unittest.TestCase):
 		For testing the FileToFileEngine.reach_back() function.  Closure
 		allows assignment of the reachBack value.
 		"""
-		def cb(pIObj, sampleNestedList):
+		def cb(engineObj, sampleNestedList):
 			for block in range(len(sampleNestedList)):
 				for channel in range(len(sampleNestedList[block])):
 					sampleNestedList[block][channel] += \
-						pIObj.reach_back(reachBack, block, channel)
+						engineObj.reach_back(reachBack, block, channel)
 				self.dataNest.append(sampleNestedList[block])
 			return sampleNestedList
 		self.reachback_cb = cb		

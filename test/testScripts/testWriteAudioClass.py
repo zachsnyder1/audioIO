@@ -22,26 +22,13 @@ class WriteAudioInitTestMethods(unittest.TestCase):
 	"""
 	Methods to test the initialization of a WriteAudio object.
 	"""
-	def test_init_no_conversion_params(self):
-		"""
-		Basic init, no conversion params.
-		"""
-		audioOutput = baseIO.WriteAudio(TEST_WRITE_FILE)
-		self.assertIsInstance(audioOutput, baseIO.WriteAudio)
-		self.assertEqual(audioOutput.conversion, False)
-		self.assertEqual(audioOutput.conversionParameters, {})
-	
-	def test_init_all_valid_conversion_params(self):
+	def test_init(self):
 		"""
 		Basic init, all conversion parameters are set to valid values.
 		"""
-		audioOutput = baseIO.WriteAudio(TEST_WRITE_FILE, format='PCM', 
-									numChannels=2, 
-									bitDepth=16, 
-									sampleRate=44100)
+		audioOutput = baseIO.WriteAudio(TEST_WRITE_FILE, 'PCM', 2, 16, 44100)
 		self.assertIsInstance(audioOutput, baseIO.WriteAudio)
-		self.assertEqual(audioOutput.conversion, True)
-		self.assertEqual(audioOutput.conversionParameters, {
+		self.assertEqual(audioOutput.headerDict, {
 			baseIO.CORE_KEY_FMT: 'PCM',
 			baseIO.CORE_KEY_NUM_CHANNELS: 2,
 			baseIO.CORE_KEY_BIT_DEPTH: 16,
@@ -56,7 +43,11 @@ class PackAndWriteTestMethods(unittest.TestCase):
 	Methods to test the WriteAudio.pack_and_write() funciton.
 	"""
 	def setUp(self):
-		self.audioOutput = baseIO.WriteAudio(TEST_WRITE_FILE)
+		self.audioOutput = baseIO.WriteAudio(TEST_WRITE_FILE, 
+												'float', 
+												2, 
+												32, 
+												44100)
 	
 	def tearDown(self):
 		pass

@@ -327,8 +327,7 @@ class WriteAudio:
 	
 	These methods are used by a Engine object in its process() method.
 	"""
-	def __init__(self, targetFile, format=None, numChannels=None, 
-					bitDepth=None, sampleRate=None):
+	def __init__(self, targetFile, format, numChannels, bitDepth, sampleRate):
 		"""
 		Constructor initializes:
 		
@@ -336,45 +335,29 @@ class WriteAudio:
 							the ReadAudio object.
 		2) self.byteArray  ==> Used to store the binary read during the
 							read_header() call.
-		3) self.conversion ==> A boolean used to indicate whether the output
-							file has a different format than the input file.
-		4) self.conversionParameters
-						   ==> The ways in which the output file differs in
-						   	format from the input file.
 		
 		Constructor accepts:
 		
 		1) targetFile  ==> The path of the file to be written.
 		
-		2) format 	   ==> The audio format of the ouput file, if different
-						   from that of the input file.
-		3) numChannels ==> The number of channels of the ouput file, if
-						   different from that of the input file.
-		4) bitDepth    ==> The bit depth of the ouput file, if different
-						   from that of the input file.
-		5) sampleRate  ==> The sample rate of the ouput file, if different
-						   from that of the input file.
+		2) format 	   ==> The audio format of the ouput file.
+		
+		3) numChannels ==> The number of channels of the ouput file.
+		
+		4) bitDepth    ==> The bit depth of the ouput file.
+		
+		5) sampleRate  ==> The sample rate of the ouput file.
 		"""
-		# Handle Conversion Parameters
-		self.conversionParameters = {}
-		self.conversion = False
-		if format:
-			self.conversionParameters[CORE_KEY_FMT] = format
-		if numChannels:
-			self.conversionParameters[CORE_KEY_NUM_CHANNELS] = int(numChannels)
-		if bitDepth:
-			self.conversionParameters[CORE_KEY_BIT_DEPTH] = int(bitDepth)
-			self.conversionParameters[CORE_KEY_BYTE_DEPTH] = \
-				int(self.conversionParameters[CORE_KEY_BIT_DEPTH] / 
-					BYTE_SIZE)
-		if sampleRate:
-			self.conversionParameters[CORE_KEY_SAMPLE_RATE] = int(sampleRate)
-		if self.conversionParameters:
-			self.conversion = True
-		# Init other vars
+		# Init instance vars
 		self.headerDict = {}
 		self.byteArray = bytearray()
 		self.targetFile = targetFile
+		# Fill in headerDict based on other init params
+		self.headerDict[CORE_KEY_FMT] = format
+		self.headerDict[CORE_KEY_NUM_CHANNELS] = int(numChannels)
+		self.headerDict[CORE_KEY_BIT_DEPTH] = int(bitDepth)
+		self.headerDict[CORE_KEY_BYTE_DEPTH] = int(bitDepth / BYTE_SIZE)
+		self.headerDict[CORE_KEY_SAMPLE_RATE] = int(sampleRate)
 
 	# ------------------------------------------------------------------------
 	# --------------------------- ABSTRACT OPERATIONS ------------------------
@@ -483,7 +466,7 @@ class WriteAudio:
 		self.byteArray = bytearray()
 		# For each tuple 'directive', pack the input into binary
 		# and assign to the bytearray
-		for directive in packNestedTuple:
+		for directive in packNestedTuple:	
 			if directive[0] == BIG_UTF:
 				self.byteArray += \
 					self.headerDict[directive[1]].encode('utf-8')

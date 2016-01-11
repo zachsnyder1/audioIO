@@ -32,7 +32,7 @@ class WavIOEngineInitTestMethods(unittest.TestCase):
 		Test basic initialization of both read and write classes.
 		"""
 		readAudioObj = wavIO.ReadWav(TEST_READ_FILE)
-		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE)
+		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, 'float', 2, 32, 44100)
 		self.assertIsInstance(readAudioObj, wavIO.ReadWav)
 		self.assertIsInstance(writeAudioObj, wavIO.WriteWav)
 	
@@ -41,12 +41,9 @@ class WavIOEngineInitTestMethods(unittest.TestCase):
 		Test initialization of write class with conversion
 		parameters set to correct values.
 		"""
-		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, format='PCM', 
-										numChannels=2, bitDepth=16, 
-										sampleRate=44100)
+		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, 'PCM', 2, 16, 44100)
 		self.assertIsInstance(writeAudioObj, wavIO.WriteWav)
-		self.assertEqual(writeAudioObj.conversion, True)
-		self.assertEqual(writeAudioObj.conversionParameters, {
+		self.assertEqual(writeAudioObj.headerDict, {
 			baseIO.CORE_KEY_FMT: 'PCM',
 			baseIO.CORE_KEY_NUM_CHANNELS: 2,
 			baseIO.CORE_KEY_BIT_DEPTH: 16,
@@ -66,9 +63,7 @@ class WavInitHeaderTestMethods(unittest.TestCase):
 		"""
 		readAudioObj = wavIO.ReadWav(TEST_READ_FILE)
 		reachBack = 0
-		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, format='PCM', 
-										numChannels=2, bitDepth=16, 
-										sampleRate=44100)
+		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, 'PCM', 2, 16, 44100)
 		
 		readAudioObj.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = 100
 		writeAudioObj.init_header(readAudioObj, reachBack)
@@ -101,9 +96,7 @@ class WavInitHeaderTestMethods(unittest.TestCase):
 		"""
 		readAudioObj = wavIO.ReadWav(TEST_READ_FILE)
 		reachBack = 0
-		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, format='float', 
-										numChannels=2, bitDepth=32, 
-										sampleRate=44100)
+		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, 'float', 2, 32, 44100)
 		
 		readAudioObj.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = 100
 		writeAudioObj.init_header(readAudioObj, reachBack)

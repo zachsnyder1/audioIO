@@ -33,7 +33,7 @@ KEY_STRUCT_MULTIPLIER = 'structMultiplier'
 KEY_STRUCT_FMT_CHAR = 'structFmtChar'
 # Sizes
 WAV_HEADER_SEARCH_LEN = 100  # Num bytes used to search for header chunk IDs
-WAV_CHUNK_HEAD_SIZE = 12   # Num bytes in WAV file format header
+WAV_CHUNK_SIZE_ADDITION = 4   # Num bytes in WAV file format header
 WAV_SUBCHUNK_HEAD_SIZE = 8  # Num bytes in a subchunk header
 FMT_CHUNK_SIZE_16 = 16  # Num bytes in PCM fmt subchunk
 FMT_CHUNK_SIZE_18 = 18  # Num bytes in non-PCM && non-extensible fmt subchunk
@@ -67,7 +67,6 @@ class WavBase:
 	WAV base class.  Holds important methods that are
 	inherited into ReadWav and WriteWav classes.
 	"""
-	
 	def init_struct_fmt_str(self):
 		"""
 		Initializes the multiplier and data type character for the struct
@@ -185,6 +184,8 @@ class ReadWav(baseIO.ReadAudio, WavBase):
 			self.headerDict[baseIO.CORE_KEY_FMT] = baseIO.PCM
 		elif self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_FLOAT:
 			self.headerDict[baseIO.CORE_KEY_FMT] = baseIO.FLOAT
+		else:
+			pass
 		# set core key baseIO.CORE_KEY_SIGNED
 		if self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_PCM and \
 			self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] == baseIO.INT8_SIZE:
@@ -214,18 +215,17 @@ class ReadWav(baseIO.ReadAudio, WavBase):
 				baseIO.INT32_SIZE)))
 		# ASSIGN CORE KEY samples per channel
 		try:
-			samplesPerChannel = self.headerDict[KEY_DW_SAMPLE_LEN]
+			sampPerChan = self.headerDict[KEY_DW_SAMPLE_LEN]
 		except KeyError:
-			#samplesPerChannel = int((self.headerDict[KEY_CHUNK_SIZE] - 
-			#						self.headerLen + 8) / 
-			#						self.headerDict[KEY_BLOCK_ALIGN])
 			if self.headerDict[KEY_SUBCHUNK2_ID] == DATA_SUBCHUNK_ID:
-				samplesPerChannel = int(self.headerDict[KEY_SUBCHUNK2_SIZE] / self.headerDict[KEY_BLOCK_ALIGN])
+				sampPerChan = int(self.headerDict[KEY_SUBCHUNK2_SIZE] / 
+					self.headerDict[KEY_BLOCK_ALIGN])
 			elif self.headerDict[KEY_SUBCHUNK3_ID] == DATA_SUBCHUNK_ID:
-				samplesPerChannel = int(self.headerDict[KEY_SUBCHUNK3_SIZE] / self.headerDict[KEY_BLOCK_ALIGN])
+				sampPerChan = int(self.headerDict[KEY_SUBCHUNK3_SIZE] / 
+					self.headerDict[KEY_BLOCK_ALIGN])
 			else:
-				raise "SHOULD NOT HAPPEN"
-		self.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = samplesPerChannel
+				raise
+		self.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = sampPerChan
 		# ANY FURTHER INITIALIZATION:
 		self.init_struct_fmt_str()
 
@@ -286,134 +286,84 @@ class WriteWav(baseIO.WriteAudio, WavBase):
 		2) reachBack  ==>  The number of samples available to the plugin
 						   algorithm for reachBack.
 		"""
-		if self.conversion or (not isinstance(audioInput, ReadWav)):
-			# Populate core headerDict{} info based on conversion parameters
-			for key, value in self.conversionParameters.items():
-				if key == baseIO.CORE_KEY_FMT:
-					if value == baseIO.FLOAT:
-						self.headerDict[KEY_AUDIO_FMT] = \
-							WAV_FMT_FLOAT
-					elif value == baseIO.PCM:
-						self.headerDict[KEY_AUDIO_FMT] = \
-							WAV_FMT_PCM
-				else:
-					pass
-				self.headerDict[key] = value
-			# Fill in the remaining core headerDict{} info
-			# based on audioInput.headerDict{}
-			coreKeys = [
-				baseIO.CORE_KEY_FMT, 
-				baseIO.CORE_KEY_NUM_CHANNELS, 
-				baseIO.CORE_KEY_BIT_DEPTH, 
-				baseIO.CORE_KEY_BYTE_DEPTH, 
-				baseIO.CORE_KEY_SAMPLE_RATE, 
-				baseIO.CORE_KEY_SAMPLES_PER_CHANNEL
-			]
-			for key in coreKeys:
-				try:
-					if key == baseIO.CORE_KEY_FMT:
-						self.headerDict[KEY_AUDIO_FMT]
-					else:
-						self.headerDict[key]
-				except KeyError:
-					if key == baseIO.CORE_KEY_FMT:
-						if audioInput.headerDict[baseIO.CORE_KEY_FMT] == \
-							baseIO.FLOAT:
-							self.headerDict[KEY_AUDIO_FMT] = \
-								WAV_FMT_FLOAT
-						elif audioInput.headerDict[baseIO.CORE_KEY_FMT] == \
-							baseIO.PCM:
-							self.headerDict[KEY_AUDIO_FMT] = \
-								WAV_FMT_PCM
-					else:
-						pass
-					self.headerDict[key] = audioInput.headerDict[key]
-			# Calculate fields from above
-			self.headerDict[KEY_BLOCK_ALIGN] = \
-				self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] * \
-				self.headerDict[baseIO.CORE_KEY_NUM_CHANNELS]
-			self.headerDict[KEY_BYTE_RATE] = \
-				self.headerDict[KEY_BLOCK_ALIGN] * \
-				self.headerDict[baseIO.CORE_KEY_SAMPLE_RATE]
-			# set core key baseIO.CORE_KEY_SIGNED
-			if self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_PCM and \
-				self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] == baseIO.INT8_SIZE:
-				self.headerDict[baseIO.CORE_KEY_SIGNED] = False
-			else:
-				self.headerDict[baseIO.CORE_KEY_SIGNED] = True
-			# init the struct fmt string
-			self.init_struct_fmt_str()
-			
-			# Populate the remaining fields:
-			# CALCULATE INTERMEDIATE VALUES
-			factChunkSizeMultiplier = \
-				math.ceil(self.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] / 
-						  (2**32))
-			dataChunkSize = \
-				int((self.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] + \
-				reachBack) * \
-				self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] * \
-				self.headerDict[baseIO.CORE_KEY_NUM_CHANNELS])
-			# SET ID STRINGS
-			self.headerDict[KEY_CHUNK_ID] = RIFF_CHUNK_ID
-			self.headerDict[KEY_FMT_ID] = WAVE_ID
-			self.headerDict[KEY_SUBCHUNK1_ID] = FMT_SUBCHUNK_ID
-			# IF AUDIO FORMAT = PCM, BIT-DEPTH <= 16
-			if (self.headerDict[KEY_AUDIO_FMT] == 
-				WAV_FMT_PCM) and (self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] <= 
-									baseIO.INT16_SIZE):
-				self.headerDict[KEY_SUBCHUNK1_SIZE] = FMT_CHUNK_SIZE_16
-				self.headerDict[KEY_SUBCHUNK2_ID] = DATA_SUBCHUNK_ID
-				self.headerDict[KEY_SUBCHUNK2_SIZE] = dataChunkSize
-			# IF AUDIO FORMAT = PCM, BIT-DEPTH = 24
-			# IN PROGRESS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			elif (self.headerDict[KEY_AUDIO_FMT] == 
-				  WAV_FMT_PCM) and (self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] == 
-				  					baseIO.INT24_SIZE):
-				pass
-			# IF AUDIO FORMAT = FLOAT
-			elif self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_FLOAT:
-				self.headerDict[KEY_SUBCHUNK1_SIZE] = FMT_CHUNK_SIZE_18
-				self.headerDict[KEY_CB_SIZE] = FMT_EXT_SIZE_0
-				self.headerDict[KEY_SUBCHUNK2_ID] = FACT_SUBCHUNK_ID
-				self.headerDict[KEY_SUBCHUNK2_SIZE] = \
-					int(baseIO.INT32_SIZE * factChunkSizeMultiplier)
-				self.headerDict[KEY_DW_SAMPLE_LEN] = \
-					self.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] + \
-					reachBack
-				self.headerDict[KEY_SUBCHUNK3_ID] = DATA_SUBCHUNK_ID
-				self.headerDict[KEY_SUBCHUNK3_SIZE] = dataChunkSize
-			# CALCULATE CHUNK SIZE:
-			if self.headerDict[KEY_SUBCHUNK2_ID] == DATA_SUBCHUNK_ID:
-				self.headerDict[KEY_CHUNK_SIZE] = \
-					int((2 * WAV_SUBCHUNK_HEAD_SIZE) + \
-					#WAV_CHUNK_HEAD_SIZE + \
-					4 + \
+		# Set audio format code based on CORE_KEY_FMT
+		if self.headerDict[baseIO.CORE_KEY_FMT] == baseIO.FLOAT:
+			self.headerDict[KEY_AUDIO_FMT] =  WAV_FMT_FLOAT
+		elif self.headerDict[baseIO.CORE_KEY_FMT] == baseIO.PCM:
+			self.headerDict[KEY_AUDIO_FMT] = WAV_FMT_PCM
+		# Copy samples per channel from audioInput.headerDict
+		self.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = \
+			audioInput.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL]
+		# Calculate fields from above
+		self.headerDict[KEY_BLOCK_ALIGN] = \
+			self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] * \
+			self.headerDict[baseIO.CORE_KEY_NUM_CHANNELS]
+		self.headerDict[KEY_BYTE_RATE] = \
+			self.headerDict[KEY_BLOCK_ALIGN] * \
+			self.headerDict[baseIO.CORE_KEY_SAMPLE_RATE]
+		# set core key baseIO.CORE_KEY_SIGNED
+		if self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_PCM and \
+				self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] == \
+				baseIO.INT8_SIZE:
+			self.headerDict[baseIO.CORE_KEY_SIGNED] = False
+		else:
+			self.headerDict[baseIO.CORE_KEY_SIGNED] = True
+		# init the struct fmt string
+		self.init_struct_fmt_str()
+		
+		# Populate the remaining fields:
+		# CALCULATE INTERMEDIATE VALUES
+		factChunkSizeMultiplier = \
+			math.ceil(self.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] / 
+					  (2**32))
+		dataChunkSize = \
+			int((self.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] + \
+			reachBack) * \
+			self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] * \
+			self.headerDict[baseIO.CORE_KEY_NUM_CHANNELS])
+		# SET ID STRINGS
+		self.headerDict[KEY_CHUNK_ID] = RIFF_CHUNK_ID
+		self.headerDict[KEY_FMT_ID] = WAVE_ID
+		self.headerDict[KEY_SUBCHUNK1_ID] = FMT_SUBCHUNK_ID
+		# IF AUDIO FORMAT = PCM, BIT-DEPTH <= 16
+		if (self.headerDict[KEY_AUDIO_FMT] == 
+			WAV_FMT_PCM) and (self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] <= 
+								baseIO.INT16_SIZE):
+			self.headerDict[KEY_SUBCHUNK1_SIZE] = FMT_CHUNK_SIZE_16
+			self.headerDict[KEY_SUBCHUNK2_ID] = DATA_SUBCHUNK_ID
+			self.headerDict[KEY_SUBCHUNK2_SIZE] = dataChunkSize
+		# IF AUDIO FORMAT = PCM, BIT-DEPTH = 24
+		# IN PROGRESS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		elif (self.headerDict[KEY_AUDIO_FMT] == 
+			  WAV_FMT_PCM) and (self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] == 
+			  					baseIO.INT24_SIZE):
+			pass
+		# IF AUDIO FORMAT = FLOAT
+		elif self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_FLOAT:
+			self.headerDict[KEY_SUBCHUNK1_SIZE] = FMT_CHUNK_SIZE_18
+			self.headerDict[KEY_CB_SIZE] = FMT_EXT_SIZE_0
+			self.headerDict[KEY_SUBCHUNK2_ID] = FACT_SUBCHUNK_ID
+			self.headerDict[KEY_SUBCHUNK2_SIZE] = \
+				int(baseIO.INT32_SIZE * factChunkSizeMultiplier)
+			self.headerDict[KEY_DW_SAMPLE_LEN] = \
+				self.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] + \
+				reachBack
+			self.headerDict[KEY_SUBCHUNK3_ID] = DATA_SUBCHUNK_ID
+			self.headerDict[KEY_SUBCHUNK3_SIZE] = dataChunkSize
+		# CALCULATE CHUNK SIZE:
+		if self.headerDict[KEY_SUBCHUNK2_ID] == DATA_SUBCHUNK_ID:
+			self.headerDict[KEY_CHUNK_SIZE] = \
+				int((2 * WAV_SUBCHUNK_HEAD_SIZE) + \
+					WAV_CHUNK_SIZE_ADDITION + \
 					self.headerDict[KEY_SUBCHUNK1_SIZE] + \
 					self.headerDict[KEY_SUBCHUNK2_SIZE])
-			else:
-				self.headerDict[KEY_CHUNK_SIZE] = \
-					int((3 * WAV_SUBCHUNK_HEAD_SIZE) + \
-					#WAV_CHUNK_HEAD_SIZE + \
-					4 + \
+		else:
+			self.headerDict[KEY_CHUNK_SIZE] = \
+				int((3 * WAV_SUBCHUNK_HEAD_SIZE) + \
+					WAV_CHUNK_SIZE_ADDITION + \
 					self.headerDict[KEY_SUBCHUNK1_SIZE] + \
 					self.headerDict[KEY_SUBCHUNK2_SIZE] + \
 					self.headerDict[KEY_SUBCHUNK3_SIZE])
-			return
-		# Else simply copy entire headerDict{}, then adjust chunk
-		# and data chunk sizes based on reachBack:
-		else:
-			for key, value in audioInput.headerDict.items():
-				self.headerDict[key] = value
-			# Calculate the size increase of file based on reachBack
-			reachBackAdd = int(reachBack * \
-				self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] * \
-				self.headerDict[baseIO.CORE_KEY_NUM_CHANNELS])
-			self.headerDict[KEY_CHUNK_SIZE] += reachBackAdd
-			if self.headerDict[KEY_SUBCHUNK2_ID] == DATA_SUBCHUNK_ID:
-				self.headerDict[KEY_SUBCHUNK2_SIZE] += reachBackAdd
-			else:
-				self.headerDict[KEY_SUBCHUNK3_SIZE] += reachBackAdd
 		return
 	
 	def write_header(self, writeStream):
