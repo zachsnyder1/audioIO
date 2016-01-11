@@ -10,21 +10,31 @@ from sys import argv
 SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.abspath(__file__)))
 sys.path.append(SCRIPT_DIR)
 from src.framework import engine
-from src.framework import wavIO as wIO
+from src.framework import wav_io as wavIO
 
 if __name__ == '__main__':
 
+	# With reach_back() call 121 seconds
 	def cb(pIObj, sampleNestedList):
 		for block in range(len(sampleNestedList)):
 			for channel in range(len(sampleNestedList[block])):
-				sampleNestedList[block][channel] += \
-					pIObj.reach_back(44100, block, channel) * 0.35
+					pIObj.reach_back(44100, block, channel)
 		return sampleNestedList
 	
-	readObj = wIO.ReadWav(argv[1])
-	writeObj = wIO.WriteWav(argv[2], format='float', bitDepth=32)
-	processor = engine.Engine(readObj, writeObj, cb, format='float', 
-							reachBack=44100)
+	# No reach_back() call: 30 seconds
+	def test_time(pIObj, sampleNestedList):
+		for block in range(len(sampleNestedList)):
+			for channel in range(len(sampleNestedList[block])):
+				pass
+		return sampleNestedList
+	
+	options = {
+		engine.OUTPUT_FMT: 'float',
+		engine.OUTPUT_BIT_DEPTH: 32
+	}
+	
+	processor = engine.FileToFileEngine(argv[1], argv[2], options=options)
 	processor.process()
+
 	endTime = time.clock()
 	print("ELAPSED TIME: {}".format(endTime))

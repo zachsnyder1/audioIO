@@ -2,7 +2,6 @@
 Contains audioIO base classes, including exception classes.
 """
 
-
 # <<<------ CONSTANTS ----->>>
 	
 # Audio Formats
@@ -102,7 +101,7 @@ class ReadAudio:
 		self.targetFile = targetFile
 
 	# ------------------------------------------------------------------------
-	# ----------------------------- TO BE OVERRIDEN --------------------------
+	# --------------------------- ABSTRACT OPERATIONS ------------------------
 	# ------------------------------------------------------------------------
 	def read_header(self, readStream):
 		"""
@@ -133,7 +132,7 @@ class ReadAudio:
 		return [[]]
 	
 	# ------------------------------------------------------------------------
-	# -------------------------- END:  TO BE OVERRIDDEN ----------------------
+	# ------------------------- END:  ABSTRACT OPERATIONS --------------------
 	# ------------------------------------------------------------------------
 	
 	def unpack_int(self, numBytes, byteorder='little', signed=False):
@@ -378,18 +377,18 @@ class WriteAudio:
 		self.targetFile = targetFile
 
 	# ------------------------------------------------------------------------
-	# ----------------------------- TO BE OVERRIDEN --------------------------
+	# --------------------------- ABSTRACT OPERATIONS ------------------------
 	# ------------------------------------------------------------------------
-	def init_header(self, readObj, reachBack):
+	def init_header(self, audioInput, reachBack):
 		"""
-		If no file conversion, simply copy header from readObj.  Else, 
-		populate based on conversion parameters, as well as readObj and 
+		If no file conversion, simply copy header from audioInput.  Else, 
+		populate based on conversion parameters, as well as audioInput and 
 		engineObj.  Must be overridden by inheriting file-type  write
 		class.
 		
 		Accepts:
 		
-		1) readObj    ==>  A pointer to the open read file.
+		1) audioInput    ==>  A pointer to the open read file.
 		
 		2) reachBack  ==>  The number of samples that the plugin 
 						   algorithm will add to the file.
@@ -424,7 +423,7 @@ class WriteAudio:
 		return bytearray()
 	
 	# ------------------------------------------------------------------------
-	# -------------------------- END:  TO BE OVERRIDDEN ----------------------
+	# ------------------------- END:  ABSTRACT OPERATIONS --------------------
 	# ------------------------------------------------------------------------
 	
 	def pack_and_write(self, writeStream, packNestedTuple):

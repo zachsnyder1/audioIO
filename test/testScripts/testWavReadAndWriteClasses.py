@@ -7,8 +7,8 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(),
 	os.path.expanduser(__file__))))
 PACKAGE_PATH = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_ROOT))
 sys.path.append(PACKAGE_PATH)
-from src.framework import audioIO as aIO
-from src.framework import wavIO as wIO
+from src.framework import base_io as baseIO
+from src.framework import wav_io as wavIO
 from src.framework import engine
 
 TEST_DATA_DIR = os.path.normpath(
@@ -31,27 +31,27 @@ class WavIOEngineInitTestMethods(unittest.TestCase):
 		"""
 		Test basic initialization of both read and write classes.
 		"""
-		readAudioObj = wIO.ReadWav(TEST_READ_FILE)
-		writeAudioObj = wIO.WriteWav(TEST_WRITE_FILE)
-		self.assertIsInstance(readAudioObj, wIO.ReadWav)
-		self.assertIsInstance(writeAudioObj, wIO.WriteWav)
+		readAudioObj = wavIO.ReadWav(TEST_READ_FILE)
+		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE)
+		self.assertIsInstance(readAudioObj, wavIO.ReadWav)
+		self.assertIsInstance(writeAudioObj, wavIO.WriteWav)
 	
 	def test_WriteWav_conversion_init(self):
 		"""
 		Test initialization of write class with conversion
 		parameters set to correct values.
 		"""
-		writeAudioObj = wIO.WriteWav(TEST_WRITE_FILE, format='PCM', 
+		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, format='PCM', 
 										numChannels=2, bitDepth=16, 
 										sampleRate=44100)
-		self.assertIsInstance(writeAudioObj, wIO.WriteWav)
+		self.assertIsInstance(writeAudioObj, wavIO.WriteWav)
 		self.assertEqual(writeAudioObj.conversion, True)
 		self.assertEqual(writeAudioObj.conversionParameters, {
-			aIO.CORE_KEY_FMT: 'PCM',
-			aIO.CORE_KEY_NUM_CHANNELS: 2,
-			aIO.CORE_KEY_BIT_DEPTH: 16,
-			aIO.CORE_KEY_BYTE_DEPTH: 2,
-			aIO.CORE_KEY_SAMPLE_RATE: 44100
+			baseIO.CORE_KEY_FMT: 'PCM',
+			baseIO.CORE_KEY_NUM_CHANNELS: 2,
+			baseIO.CORE_KEY_BIT_DEPTH: 16,
+			baseIO.CORE_KEY_BYTE_DEPTH: 2,
+			baseIO.CORE_KEY_SAMPLE_RATE: 44100
 		})
 
 
@@ -64,74 +64,74 @@ class WavInitHeaderTestMethods(unittest.TestCase):
 		"""
 		Test with valid conversion parameters, converting to a PCM file.
 		"""
-		readAudioObj = wIO.ReadWav(TEST_READ_FILE)
+		readAudioObj = wavIO.ReadWav(TEST_READ_FILE)
 		reachBack = 0
-		writeAudioObj = wIO.WriteWav(TEST_WRITE_FILE, format='PCM', 
+		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, format='PCM', 
 										numChannels=2, bitDepth=16, 
 										sampleRate=44100)
 		
-		readAudioObj.headerDict[aIO.CORE_KEY_SAMPLES_PER_CHANNEL] = 100
+		readAudioObj.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = 100
 		writeAudioObj.init_header(readAudioObj, reachBack)
 		
 		self.assertEqual(writeAudioObj.headerDict, {
-			aIO.CORE_KEY_SAMPLES_PER_CHANNEL: 100,
-			wIO.KEY_CHUNK_ID: wIO.RIFF_CHUNK_ID,
-			wIO.KEY_CHUNK_SIZE: 444,
-			wIO.KEY_FMT_ID: wIO.WAVE_ID,
-			wIO.KEY_SUBCHUNK1_ID: wIO.FMT_SUBCHUNK_ID,
-			wIO.KEY_SUBCHUNK1_SIZE: wIO.FMT_CHUNK_SIZE_16,
-			wIO.KEY_AUDIO_FMT: wIO.WAV_FMT_PCM,
-			aIO.CORE_KEY_NUM_CHANNELS: 2,
-			aIO.CORE_KEY_SAMPLE_RATE: 44100,
-			wIO.KEY_BYTE_RATE: 4*44100,
-			wIO.KEY_BLOCK_ALIGN: 4,
-			aIO.CORE_KEY_BIT_DEPTH: 16,
-			aIO.CORE_KEY_BYTE_DEPTH: 2,
-			wIO.KEY_SUBCHUNK2_ID: wIO.DATA_SUBCHUNK_ID,
-			wIO.KEY_SUBCHUNK2_SIZE: 400,
-			wIO.KEY_STRUCT_MULTIPLIER: '',
-			wIO.KEY_STRUCT_FMT_CHAR: 'h',
-			aIO.CORE_KEY_SIGNED: True,
-			aIO.CORE_KEY_FMT: 'PCM'
+			baseIO.CORE_KEY_SAMPLES_PER_CHANNEL: 100,
+			wavIO.KEY_CHUNK_ID: wavIO.RIFF_CHUNK_ID,
+			wavIO.KEY_CHUNK_SIZE: 436,
+			wavIO.KEY_FMT_ID: wavIO.WAVE_ID,
+			wavIO.KEY_SUBCHUNK1_ID: wavIO.FMT_SUBCHUNK_ID,
+			wavIO.KEY_SUBCHUNK1_SIZE: wavIO.FMT_CHUNK_SIZE_16,
+			wavIO.KEY_AUDIO_FMT: wavIO.WAV_FMT_PCM,
+			baseIO.CORE_KEY_NUM_CHANNELS: 2,
+			baseIO.CORE_KEY_SAMPLE_RATE: 44100,
+			wavIO.KEY_BYTE_RATE: 4*44100,
+			wavIO.KEY_BLOCK_ALIGN: 4,
+			baseIO.CORE_KEY_BIT_DEPTH: 16,
+			baseIO.CORE_KEY_BYTE_DEPTH: 2,
+			wavIO.KEY_SUBCHUNK2_ID: wavIO.DATA_SUBCHUNK_ID,
+			wavIO.KEY_SUBCHUNK2_SIZE: 400,
+			wavIO.KEY_STRUCT_MULTIPLIER: '',
+			wavIO.KEY_STRUCT_FMT_CHAR: 'h',
+			baseIO.CORE_KEY_SIGNED: True,
+			baseIO.CORE_KEY_FMT: 'PCM'
 		})
 	
 	def test_valid_conversion_parameters_float(self):
 		"""
 		Test with valid conversion parameters, converting to a float file.
 		"""
-		readAudioObj = wIO.ReadWav(TEST_READ_FILE)
+		readAudioObj = wavIO.ReadWav(TEST_READ_FILE)
 		reachBack = 0
-		writeAudioObj = wIO.WriteWav(TEST_WRITE_FILE, format='float', 
+		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, format='float', 
 										numChannels=2, bitDepth=32, 
 										sampleRate=44100)
 		
-		readAudioObj.headerDict[aIO.CORE_KEY_SAMPLES_PER_CHANNEL] = 100
+		readAudioObj.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = 100
 		writeAudioObj.init_header(readAudioObj, reachBack)
 		
 		self.assertEqual(writeAudioObj.headerDict, {
-			aIO.CORE_KEY_SAMPLES_PER_CHANNEL: 100,
-			wIO.KEY_CHUNK_ID: wIO.RIFF_CHUNK_ID,
-			wIO.KEY_CHUNK_SIZE: 858,
-			wIO.KEY_FMT_ID: wIO.WAVE_ID,
-			wIO.KEY_SUBCHUNK1_ID: wIO.FMT_SUBCHUNK_ID,
-			wIO.KEY_SUBCHUNK1_SIZE: wIO.FMT_CHUNK_SIZE_18,
-			wIO.KEY_AUDIO_FMT: wIO.WAV_FMT_FLOAT,
-			aIO.CORE_KEY_NUM_CHANNELS: 2,
-			aIO.CORE_KEY_SAMPLE_RATE: 44100,
-			wIO.KEY_BYTE_RATE: 8*44100,
-			wIO.KEY_BLOCK_ALIGN: 8,
-			aIO.CORE_KEY_BIT_DEPTH: 32,
-			aIO.CORE_KEY_BYTE_DEPTH: 4,
-			wIO.KEY_CB_SIZE: 0,
-			wIO.KEY_SUBCHUNK2_ID: wIO.FACT_SUBCHUNK_ID,
-			wIO.KEY_SUBCHUNK2_SIZE: 4,
-			wIO.KEY_DW_SAMPLE_LEN: 100,
-			wIO.KEY_SUBCHUNK3_ID: wIO.DATA_SUBCHUNK_ID,
-			wIO.KEY_SUBCHUNK3_SIZE: 800,
-			wIO.KEY_STRUCT_MULTIPLIER: '',
-			wIO.KEY_STRUCT_FMT_CHAR: 'f',
-			aIO.CORE_KEY_SIGNED: True,
-			aIO.CORE_KEY_FMT: 'float'
+			baseIO.CORE_KEY_SAMPLES_PER_CHANNEL: 100,
+			wavIO.KEY_CHUNK_ID: wavIO.RIFF_CHUNK_ID,
+			wavIO.KEY_CHUNK_SIZE: 850,
+			wavIO.KEY_FMT_ID: wavIO.WAVE_ID,
+			wavIO.KEY_SUBCHUNK1_ID: wavIO.FMT_SUBCHUNK_ID,
+			wavIO.KEY_SUBCHUNK1_SIZE: wavIO.FMT_CHUNK_SIZE_18,
+			wavIO.KEY_AUDIO_FMT: wavIO.WAV_FMT_FLOAT,
+			baseIO.CORE_KEY_NUM_CHANNELS: 2,
+			baseIO.CORE_KEY_SAMPLE_RATE: 44100,
+			wavIO.KEY_BYTE_RATE: 8*44100,
+			wavIO.KEY_BLOCK_ALIGN: 8,
+			baseIO.CORE_KEY_BIT_DEPTH: 32,
+			baseIO.CORE_KEY_BYTE_DEPTH: 4,
+			wavIO.KEY_CB_SIZE: 0,
+			wavIO.KEY_SUBCHUNK2_ID: wavIO.FACT_SUBCHUNK_ID,
+			wavIO.KEY_SUBCHUNK2_SIZE: 4,
+			wavIO.KEY_DW_SAMPLE_LEN: 100,
+			wavIO.KEY_SUBCHUNK3_ID: wavIO.DATA_SUBCHUNK_ID,
+			wavIO.KEY_SUBCHUNK3_SIZE: 800,
+			wavIO.KEY_STRUCT_MULTIPLIER: '',
+			wavIO.KEY_STRUCT_FMT_CHAR: 'f',
+			baseIO.CORE_KEY_SIGNED: True,
+			baseIO.CORE_KEY_FMT: 'float'
 		})
 
 
@@ -163,25 +163,22 @@ class CopyTestFilesTestMethods(unittest.TestCase):
 					else:
 						pass
 					# Perform copy
-					self.readAudioObj = wIO.ReadWav(os.path.join(
-															TEST_DATA_DIR, 
-															readFile))
-					writeFile = readFile.split('.')[0] + '_AFTER.py'
-					self.writeAudioObj = wIO.WriteWav(os.path.join(
-															TEST_DATA_DIR, 
-															writeFile))
-					self.engineObj = engine.Engine(self.readAudioObj, 
-												self.writeAudioObj, 
-												self.plugin_cb)
+					readFilePath = os.path.join(TEST_DATA_DIR, readFile)
+					writeFile = readFile.split('.')[0] + '_AFTER.wav'
+					writeFilePath = os.path.join(TEST_DATA_DIR, writeFile)
+					options = {}
+					self.engineObj = engine.FileToFileEngine(
+												readFilePath, 
+												writeFilePath, 
+												algorithm=self.plugin_cb,
+												options=options)
 					self.engineObj.process()
 					# Test that copy was successful
 					readSha1 = hashlib.sha1()
 					writeSha1 = hashlib.sha1()
-					with open(os.path.join(TEST_DATA_DIR, 
-											readFile), 'rb') as readStream:
+					with open(readFilePath, 'rb') as readStream:
 						readSha1.update(readStream.read())
-					with open(os.path.join(TEST_DATA_DIR, 
-											writeFile), 'rb') as writeStream:
+					with open(writeFilePath, 'rb') as writeStream:
 						writeSha1.update(writeStream.read())
 					self.assertEqual(readSha1.hexdigest(), 
 										writeSha1.hexdigest())

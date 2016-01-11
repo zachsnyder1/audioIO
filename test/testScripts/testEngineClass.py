@@ -7,9 +7,9 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(),
 	os.path.expanduser(__file__))))
 PACKAGE_PATH = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_ROOT))
 sys.path.append(PACKAGE_PATH)
-from src.framework import wavIO as wIO
-from src.framework import audioIO as aIO
-from src.framework import engine_helper
+from src.framework import base_io as baseIO
+from src.framework import wav_io as wavIO
+from src.framework import enginehelper
 from src.framework import engine
 
 TEST_DATA_DIR = os.path.normpath(
@@ -18,13 +18,13 @@ TEST_DATA_DIR = os.path.normpath(
 					os.path.abspath(__file__))) + '/testData/')
 TEST_WRITE_FILE = os.path.normpath(
 					os.path.abspath(
-					os.path.join(TEST_DATA_DIR, 'test_write_audio_file.txt')))
+					os.path.join(TEST_DATA_DIR, 'test_write_audio_file.wav')))
 
 
 
 class EngineInitTestMethods(unittest.TestCase):
 	"""
-	Methods to test the initialization of an Engine object.
+	Methods to test the initialization of an FileToFileEngine object.
 	"""
 	def setUp(self):
 		self.testReadFile = None
@@ -46,10 +46,10 @@ class EngineInitTestMethods(unittest.TestCase):
 		"""
 		Test basic initialization.
 		"""
-		readAudioObj = wIO.ReadWav(self.testReadFile)
-		writeAudioObj = wIO.WriteWav(TEST_WRITE_FILE)
-		engineObj = engine.Engine(readAudioObj, writeAudioObj, self.plugin_cb)
-		self.assertIsInstance(engineObj, engine.Engine)
+		engineObj = engine.FileToFileEngine(self.testReadFile, 
+											TEST_WRITE_FILE, 
+											algorithm=self.plugin_cb)
+		self.assertIsInstance(engineObj, engine.FileToFileEngine)
 
 
 class EngineConversionTestMethods(unittest.TestCase):
@@ -276,32 +276,37 @@ class EngineConversionTestMethods(unittest.TestCase):
 				self.assert_int_cb
 			],
 		]
+		num = 0
 		for paramList in paramNest:
+			num += 1
 			with self.subTest(params = paramList):
 				# set read and write files	
 				readFile = os.path.join(TEST_DATA_DIR, paramList[0])
 				writeFile = os.path.join(TEST_DATA_DIR, paramList[1])
-				postTestFile = os.path.join(TEST_DATA_DIR, 'temp1.wav')
+				postTestFile = os.path.join(TEST_DATA_DIR, 'temp{}.wav'.format(num))
 				# init objects
-				readAudioObj = wIO.ReadWav(readFile)
-				writeAudioObj = wIO.WriteWav(writeFile, 
-												format=paramList[2], 
-												bitDepth=paramList[3])
-				engineObj = engine.Engine(readAudioObj, writeAudioObj, 
-									  paramList[5], format=paramList[4])
-				engineObj.process()
+				optionsConv = {
+					engine.OUTPUT_FMT: paramList[2],
+					engine.OUTPUT_BIT_DEPTH: paramList[3],
+					engine.PLUGIN_FMT: paramList[4]
+				}
+				engineObjA = engine.FileToFileEngine(
+									readFile, 
+									writeFile, 
+									algorithm=paramList[5], 
+									options=optionsConv)
+				engineObjA.process()
 				# Test the wrapper function
-				readAudioObj = wIO.ReadWav(writeFile)
-				writeAudioObj = wIO.WriteWav(postTestFile)
-				engineObj = engine.Engine(readAudioObj, writeAudioObj, 
-										paramList[6])
-				engineObj.process()
+				options = {}
+				engineObjB = engine.FileToFileEngine(writeFile, postTestFile, 
+										algorithm=paramList[6])
+				engineObjB.process()
 		
 		
 		
 class FloatPcmConversionsTestMethods(unittest.TestCase):
 	"""
-	Methods to test the Engine helper methods that convert a nested array
+	Methods to test the FileToFileEngine helper methods that convert a nested array
 	of data between float and PCM.
 	"""
 	def plugin_cb(self, engineObj, sampleNestedList):
@@ -319,10 +324,10 @@ class FloatPcmConversionsTestMethods(unittest.TestCase):
 			self.fail("no 'WAVE_*' file in testData/ dir")
 		else:
 			pass
-		readAudioObj = wIO.ReadWav(self.testReadFile)
-		writeAudioObj = wIO.WriteWav(TEST_WRITE_FILE)
-		self.engineObj = engine.Engine(readAudioObj, writeAudioObj, 
-									self.plugin_cb)
+		self.engineObj = engine.FileToFileEngine(
+									self.testReadFile, 
+									TEST_WRITE_FILE, 
+									algorithm=self.plugin_cb)
 	
 	def test_float_to_pcm(self):
 		"""
@@ -355,7 +360,7 @@ class FloatPcmConversionsTestMethods(unittest.TestCase):
 			]
 		]
 		for paramList in paramNest:
-			converted = engine_helper.float_to_pcm(paramList[0], 
+			converted = enginehelper.float_to_pcm(paramList[0], 
 												   paramList[1], 
 												   paramList[2])
 			for i in range(len(converted)):
@@ -395,7 +400,7 @@ class FloatPcmConversionsTestMethods(unittest.TestCase):
 			]
 		]
 		for paramList in paramNest:
-			converted = engine_helper.pcm_to_float(paramList[0], 
+			converted = enginehelper.pcm_to_float(paramList[0], 
 												   paramList[1], 
 												   paramList[2])
 			for i in range(len(converted)):
@@ -408,7 +413,7 @@ class FloatPcmConversionsTestMethods(unittest.TestCase):
 	
 class ClipTestMethods(unittest.TestCase):
 	"""
-	Methods to test the Engine.clip_float() and Engine.clip_pcm()
+	Methods to test the FileToFileEngine.clip_float() and FileToFileEngine.clip_pcm()
 	functions.
 	"""
 	def plugin_cb(self, engineObj, sampleNestedList):
@@ -426,14 +431,14 @@ class ClipTestMethods(unittest.TestCase):
 			self.fail("no 'WAVE_*' file in testData/ dir")
 		else:
 			pass
-		readAudioObj = wIO.ReadWav(self.testReadFile)
-		writeAudioObj = wIO.WriteWav(TEST_WRITE_FILE)
-		self.engineObj = engine.Engine(readAudioObj, writeAudioObj, 
-									self.plugin_cb)
+		self.engineObj = engine.FileToFileEngine(
+									self.testReadFile, 
+									TEST_WRITE_FILE, 
+									algorithm=self.plugin_cb)
 	
 	def test_clip_float(self):
 		"""
-		Test that engine_helper.clip_float() properly clips a nested list
+		Test that enginehelper.clip_float() properly clips a nested list
 		of float values.
 		"""
 		nest = [
@@ -452,12 +457,12 @@ class ClipTestMethods(unittest.TestCase):
 			[-0.5, 0.5],
 			[0.0, 0.0]
 		]
-		clippedNest = engine_helper.clip_float(nest)
+		clippedNest = enginehelper.clip_float(nest)
 		self.assertEqual(clippedNest, expected)
 	
 	def test_clip_pcm(self):
 		"""
-		Test that engine_helper.clip_pcm() properly clips a nested list
+		Test that enginehelper.clip_pcm() properly clips a nested list
 		of PCM values of various bit depth.
 		"""
 		paramNest = [
@@ -516,14 +521,14 @@ class ClipTestMethods(unittest.TestCase):
 		
 		for paramList in paramNest:
 			with self.subTest(params=paramList):
-				clippedNest = engine_helper.clip_pcm(paramList[1], 
+				clippedNest = enginehelper.clip_pcm(paramList[1], 
 													 paramList[0])
 				self.assertEqual(clippedNest, paramList[2])
 	
 	
 class ReachBackTestMethods(unittest.TestCase):
 	"""
-	Methods to test the reach back functionality of the Engine
+	Methods to test the reach back functionality of the FileToFileEngine
 	class.
 	"""
 	dataNest = []  # For accumulating nested sample data over
@@ -534,7 +539,7 @@ class ReachBackTestMethods(unittest.TestCase):
 	
 	def reachback_cb_closure(self, reachBack):
 		"""
-		For testing the Engine.reach_back() function.  Closure
+		For testing the FileToFileEngine.reach_back() function.  Closure
 		allows assignment of the reachBack value.
 		"""
 		def cb(pIObj, sampleNestedList):
@@ -578,6 +583,10 @@ class ReachBackTestMethods(unittest.TestCase):
 				10
 			],
 			[
+				'ENGINE_PCM_2CH_44100SR_8BIT.wav',
+				0
+			],
+			[
 				'ENGINE_PCM_2CH_44100SR_16BIT.wav',
 				1000
 			],
@@ -585,6 +594,10 @@ class ReachBackTestMethods(unittest.TestCase):
 				'ENGINE_PCM_2CH_44100SR_16BIT.wav',
 				10
 			],
+			[
+				'ENGINE_PCM_2CH_44100SR_16BIT.wav',
+				0
+			]
 		]
 		for paramList in paramNest:
 			with self.subTest(params = paramList):
@@ -592,45 +605,49 @@ class ReachBackTestMethods(unittest.TestCase):
 				readFile = os.path.join(TEST_DATA_DIR, paramList[0])
 				writeFile = os.path.join(TEST_DATA_DIR, 'temp1.wav')
 				# init objects
-				readAudioObj = wIO.ReadWav(readFile)
-				writeAudioObj = wIO.WriteWav(writeFile)
-				engineObj = engine.Engine(readAudioObj, writeAudioObj, 
-									  self.plugin_cb, reachBack=paramList[1])
+				optionsDict = {
+					engine.PLUGIN_REACH_BACK: paramList[1]
+				}
+				engineObj = engine.FileToFileEngine(
+									readFile, 
+									writeFile, 
+									algorithm=self.plugin_cb, 
+									options=optionsDict)
 				
 				# Expected difference in size
 				sizeDiff = paramList[1] * \
-					engineObj.readObj.headerDict[
-						aIO.CORE_KEY_BYTE_DEPTH] * \
-					engineObj.readObj.headerDict[
-						aIO.CORE_KEY_NUM_CHANNELS]
+					engineObj.audioInput.headerDict[
+						baseIO.CORE_KEY_BYTE_DEPTH] * \
+					engineObj.audioInput.headerDict[
+						baseIO.CORE_KEY_NUM_CHANNELS]
 				# Store read/write chunk size
 				readChunkSize = \
-					engineObj.readObj.headerDict[
-						wIO.KEY_CHUNK_SIZE]
+					engineObj.audioInput.headerDict[
+						wavIO.KEY_CHUNK_SIZE]
 				writeChunkSize = \
-					engineObj.writeObj.headerDict[
-						wIO.KEY_CHUNK_SIZE]
+					engineObj.audioOutput.headerDict[
+						wavIO.KEY_CHUNK_SIZE]
 				# Store read/write data subchunk size
-				if engineObj.readObj.headerDict[
-						wIO.KEY_SUBCHUNK2_ID] == \
-						wIO.DATA_SUBCHUNK_ID:
+				if engineObj.audioInput.headerDict[
+						wavIO.KEY_SUBCHUNK2_ID] == \
+						wavIO.DATA_SUBCHUNK_ID:
 					readDataSubChunkSize = \
-						engineObj.readObj.headerDict[
-							wIO.KEY_SUBCHUNK2_SIZE]
+						engineObj.audioInput.headerDict[
+							wavIO.KEY_SUBCHUNK2_SIZE]
 				else:
 					readDataSubChunkSize = \
-						engineObj.readObj.headerDict[
-							wIO.KEY_SUBCHUNK3_SIZE]
-				if engineObj.writeObj.headerDict[
-						wIO.KEY_SUBCHUNK2_ID] == \
-						wIO.DATA_SUBCHUNK_ID:
+						engineObj.audioInput.headerDict[
+							wavIO.KEY_SUBCHUNK3_SIZE]
+				if engineObj.audioOutput.headerDict[
+						wavIO.KEY_SUBCHUNK2_ID] == \
+						wavIO.DATA_SUBCHUNK_ID:
 					writeDataSubChunkSize = \
-						engineObj.writeObj.headerDict[
-							wIO.KEY_SUBCHUNK2_SIZE]
+						engineObj.audioOutput.headerDict[
+							wavIO.KEY_SUBCHUNK2_SIZE]
 				else:
 					writeDataSubChunkSize = \
-						engineObj.writeObj.headerDict[
-							wIO.KEY_SUBCHUNK3_SIZE]
+						engineObj.audioOutput.headerDict[
+							wavIO.KEY_SUBCHUNK3_SIZE]
 				# ASSERTIONS:
 				self.assertEqual(writeChunkSize, 
 								 (readChunkSize + sizeDiff))
@@ -821,11 +838,14 @@ class ReachBackTestMethods(unittest.TestCase):
 				# set reachback_cb using closure
 				self.reachback_cb_closure(paramList[2])
 				# init objects
-				readAudioObj = wIO.ReadWav(readFile)
-				writeAudioObj = wIO.WriteWav(writeFile)
-				engineObj = engine.Engine(readAudioObj, writeAudioObj, 
-									  self.reachback_cb, 
-									  reachBack=paramList[2])
+				options = {
+					engine.PLUGIN_REACH_BACK: paramList[2]
+				}
+				engineObj = engine.FileToFileEngine(
+									readFile, 
+									writeFile, 
+									algorithm=self.reachback_cb, 
+									options=options)
 				engineObj.process()
 				# Assertion:
 				self.assertEqual(self.dataNest, paramList[3])

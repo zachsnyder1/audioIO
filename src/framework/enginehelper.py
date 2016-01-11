@@ -130,6 +130,13 @@ def pcm_to_pcm(sampleNestedList, inBitDepth, outBitDepth, inSigned,
 	return float_to_pcm(sampleNestedList, outBitDepth, outSigned)
 
 
+def default_algorithm(self, sampleNestedList):
+	"""
+	Default algorithm, if Engine object is instantiated without
+	an algorithm callback.
+	"""
+	return sampleNestedList
+
 # --------------------------------------------------------------
 # ---------------------- ALGORITHM WRAPPERS: -------------------
 # --------------------------------------------------------------

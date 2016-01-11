@@ -6,7 +6,7 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(),
 	os.path.expanduser(__file__))))
 PACKAGE_PATH = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_ROOT))
 sys.path.append(PACKAGE_PATH)
-from src.framework import audioIO as aIO
+from src.framework import base_io as baseIO
 
 TEST_DATA_DIR = os.path.normpath(
 					os.path.dirname(
@@ -26,27 +26,27 @@ class WriteAudioInitTestMethods(unittest.TestCase):
 		"""
 		Basic init, no conversion params.
 		"""
-		writeObj = aIO.WriteAudio(TEST_WRITE_FILE)
-		self.assertIsInstance(writeObj, aIO.WriteAudio)
-		self.assertEqual(writeObj.conversion, False)
-		self.assertEqual(writeObj.conversionParameters, {})
+		audioOutput = baseIO.WriteAudio(TEST_WRITE_FILE)
+		self.assertIsInstance(audioOutput, baseIO.WriteAudio)
+		self.assertEqual(audioOutput.conversion, False)
+		self.assertEqual(audioOutput.conversionParameters, {})
 	
 	def test_init_all_valid_conversion_params(self):
 		"""
 		Basic init, all conversion parameters are set to valid values.
 		"""
-		writeObj = aIO.WriteAudio(TEST_WRITE_FILE, format='PCM', 
+		audioOutput = baseIO.WriteAudio(TEST_WRITE_FILE, format='PCM', 
 									numChannels=2, 
 									bitDepth=16, 
 									sampleRate=44100)
-		self.assertIsInstance(writeObj, aIO.WriteAudio)
-		self.assertEqual(writeObj.conversion, True)
-		self.assertEqual(writeObj.conversionParameters, {
-			aIO.CORE_KEY_FMT: 'PCM',
-			aIO.CORE_KEY_NUM_CHANNELS: 2,
-			aIO.CORE_KEY_BIT_DEPTH: 16,
-			aIO.CORE_KEY_BYTE_DEPTH: 2,
-			aIO.CORE_KEY_SAMPLE_RATE: 44100
+		self.assertIsInstance(audioOutput, baseIO.WriteAudio)
+		self.assertEqual(audioOutput.conversion, True)
+		self.assertEqual(audioOutput.conversionParameters, {
+			baseIO.CORE_KEY_FMT: 'PCM',
+			baseIO.CORE_KEY_NUM_CHANNELS: 2,
+			baseIO.CORE_KEY_BIT_DEPTH: 16,
+			baseIO.CORE_KEY_BYTE_DEPTH: 2,
+			baseIO.CORE_KEY_SAMPLE_RATE: 44100
 		})
 		
 
@@ -56,7 +56,7 @@ class PackAndWriteTestMethods(unittest.TestCase):
 	Methods to test the WriteAudio.pack_and_write() funciton.
 	"""
 	def setUp(self):
-		self.writeObj = aIO.WriteAudio(TEST_WRITE_FILE)
+		self.audioOutput = baseIO.WriteAudio(TEST_WRITE_FILE)
 	
 	def tearDown(self):
 		pass
@@ -82,27 +82,27 @@ class PackAndWriteTestMethods(unittest.TestCase):
 		for parameterList in paramNestedList:
 			with self.subTest(utf_str = parameterList):
 				# set headerDict['test']
-				self.writeObj.headerDict['test'] = parameterList[0]
+				self.audioOutput.headerDict['test'] = parameterList[0]
 				# handle endianness
 				if parameterList[1] == 'little':
-					packStr = aIO.LITTLE_UTF
+					packStr = baseIO.LITTLE_UTF
 				elif parameterList[1] == 'big':
-					packStr = aIO.BIG_UTF
+					packStr = baseIO.BIG_UTF
 				# write utf to file
 				with open(TEST_WRITE_FILE, 'wb') as writeStream:
 					writeStream.truncate()
-					self.writeObj.pack_and_write(writeStream, (
+					self.audioOutput.pack_and_write(writeStream, (
 						(packStr, 'test', len(parameterList[0])),
 					))
 				# read utf
 				binary = bytearray()
 				with open(TEST_WRITE_FILE, 'rb') as readStream:
 					binary += readStream.read(len(parameterList[0]))
-				if packStr == aIO.BIG_UTF:
-					self.assertEqual(self.writeObj.headerDict['test'], 
+				if packStr == baseIO.BIG_UTF:
+					self.assertEqual(self.audioOutput.headerDict['test'], 
 									 binary.decode('utf-8'))
-				elif packStr == aIO.LITTLE_UTF:
-					self.assertEqual(self.writeObj.headerDict['test'], 
+				elif packStr == baseIO.LITTLE_UTF:
+					self.assertEqual(self.audioOutput.headerDict['test'], 
 									 binary.decode('utf-8')[::-1])
 					
 	def test_pack_and_write_int(self):
@@ -128,22 +128,22 @@ class PackAndWriteTestMethods(unittest.TestCase):
 		for parameterList in paramNestedList:
 			with self.subTest(numBytes_byteorder_signed = parameterList):
 				# set headerDict['test']
-				self.writeObj.headerDict['test'] = \
+				self.audioOutput.headerDict['test'] = \
 					int((2**((parameterList[0]*8) - 1)) - 1)
 				# handle endianness
 				if parameterList[1] == 'little' and parameterList[2] == True:
-					packStr = aIO.LITTLE_INT
+					packStr = baseIO.LITTLE_INT
 				elif parameterList[1] == 'little' and \
 					parameterList[2] == False:
-					packStr = aIO.LITTLE_UINT
+					packStr = baseIO.LITTLE_UINT
 				elif parameterList[1] == 'big' and parameterList[2] == True:
-					packStr = aIO.BIG_INT
+					packStr = baseIO.BIG_INT
 				elif parameterList[1] == 'big' and parameterList[2] == False:
-					packStr = aIO.BIG_UINT
+					packStr = baseIO.BIG_UINT
 				# write utf to file
 				with open(TEST_WRITE_FILE, 'wb') as writeStream:
 					writeStream.truncate()
-					self.writeObj.pack_and_write(writeStream, (
+					self.audioOutput.pack_and_write(writeStream, (
 						(packStr, 'test', parameterList[0]),
 					))
 				# read int
@@ -151,23 +151,23 @@ class PackAndWriteTestMethods(unittest.TestCase):
 				with open(TEST_WRITE_FILE, 'rb') as readStream:
 					binary += readStream.read(parameterList[0])
 				# assert
-				if packStr == aIO.LITTLE_INT:
-					self.assertEqual(self.writeObj.headerDict['test'], 
+				if packStr == baseIO.LITTLE_INT:
+					self.assertEqual(self.audioOutput.headerDict['test'], 
 									 int.from_bytes(binary, 
 									 				byteorder='little', 
 									 				signed=True))
-				elif packStr == aIO.LITTLE_UINT:
-					self.assertEqual(self.writeObj.headerDict['test'], 
+				elif packStr == baseIO.LITTLE_UINT:
+					self.assertEqual(self.audioOutput.headerDict['test'], 
 									 int.from_bytes(binary, 
 									 				byteorder='little', 
 									 				signed=False))
-				elif packStr == aIO.BIG_INT:
-					self.assertEqual(self.writeObj.headerDict['test'], 
+				elif packStr == baseIO.BIG_INT:
+					self.assertEqual(self.audioOutput.headerDict['test'], 
 									 int.from_bytes(binary, 
 									 				byteorder='big', 
 									 				signed=True))
-				elif packStr == aIO.BIG_UINT:
-					self.assertEqual(self.writeObj.headerDict['test'], 
+				elif packStr == baseIO.BIG_UINT:
+					self.assertEqual(self.audioOutput.headerDict['test'], 
 									 int.from_bytes(binary, 
 									 				byteorder='big', 
 									 				signed=False))
@@ -207,10 +207,10 @@ class PackAndWriteTestMethods(unittest.TestCase):
 		for i in range(len(paramNestedList)):
 			key = 'key' + str(i)
 			if isinstance(paramNestedList[i][0], int):
-				self.writeObj.headerDict[key] = \
+				self.audioOutput.headerDict[key] = \
 					int(2**((paramNestedList[i][0] * 8) - 1) - 1)
 			elif isinstance(paramNestedList[i][0], str):
-				self.writeObj.headerDict[key] = paramNestedList[i][0]
+				self.audioOutput.headerDict[key] = paramNestedList[i][0]
 			else:
 				raise
 			keyList.append(key)
@@ -227,19 +227,19 @@ class PackAndWriteTestMethods(unittest.TestCase):
 					# handle pack string
 					if paramNestedList[i][1] == 'little' and \
 						paramNestedList[i][2] == True:
-						tupleList.append((aIO.LITTLE_INT, 
+						tupleList.append((baseIO.LITTLE_INT, 
 										  keyList[i], leng))
 					elif paramNestedList[i][1] == 'little' and \
 						paramNestedList[i][2] == False:
-						tupleList.append((aIO.LITTLE_UINT, 
+						tupleList.append((baseIO.LITTLE_UINT, 
 										  keyList[i], leng))
 					elif paramNestedList[i][1] == 'big' and \
 						paramNestedList[i][2] == True:
-						tupleList.append((aIO.BIG_INT, 
+						tupleList.append((baseIO.BIG_INT, 
 										  keyList[i], leng))
 					elif paramNestedList[i][1] == 'big' and \
 						paramNestedList[i][2] == False:
-						tupleList.append((aIO.BIG_UINT, 
+						tupleList.append((baseIO.BIG_UINT, 
 										  keyList[i], leng))
 					else:
 						raise
@@ -247,17 +247,17 @@ class PackAndWriteTestMethods(unittest.TestCase):
 					leng = len(paramNestedList[i][0])
 					# handle endianness
 					if paramNestedList[i][1] == 'little':
-						tupleList.append((aIO.LITTLE_UTF, 
+						tupleList.append((baseIO.LITTLE_UTF, 
 										  keyList[i]))
 					elif paramNestedList[i][1] == 'big':
-						tupleList.append((aIO.BIG_UTF, 
+						tupleList.append((baseIO.BIG_UTF, 
 										  keyList[i]))
 					else:
 						raise
 				else:
 					raise
 			nestedTuple = (tupleList[:])
-			self.writeObj.pack_and_write(writeStream, nestedTuple)	
+			self.audioOutput.pack_and_write(writeStream, nestedTuple)	
 		# Read and test
 		with open(TEST_WRITE_FILE, 'rb') as readStream:
 			for i in range(len(paramNestedList)):
