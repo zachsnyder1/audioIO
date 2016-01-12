@@ -20,15 +20,15 @@ TEST_WRITE_FILE = os.path.normpath(
 
 class WriteAudioInitTestMethods(unittest.TestCase):
 	"""
-	Methods to test the initialization of a WriteAudio object.
+	Methods to test the initialization of a BaseWrite object.
 	"""
 	def test_init(self):
 		"""
 		Basic init, all conversion parameters are set to valid values.
 		"""
-		audioOutput = baseIO.WriteAudio(TEST_WRITE_FILE, 'PCM', 2, 16, 44100)
-		self.assertIsInstance(audioOutput, baseIO.WriteAudio)
-		self.assertEqual(audioOutput.headerDict, {
+		outputSignal = baseIO.BaseWrite(TEST_WRITE_FILE, 'PCM', 2, 16, 44100)
+		self.assertIsInstance(outputSignal, baseIO.BaseWrite)
+		self.assertEqual(outputSignal.signalParams, {
 			baseIO.CORE_KEY_FMT: 'PCM',
 			baseIO.CORE_KEY_NUM_CHANNELS: 2,
 			baseIO.CORE_KEY_BIT_DEPTH: 16,
@@ -40,10 +40,10 @@ class WriteAudioInitTestMethods(unittest.TestCase):
 
 class PackAndWriteTestMethods(unittest.TestCase):
 	"""
-	Methods to test the WriteAudio.pack_and_write() funciton.
+	Methods to test the BaseWrite.pack_and_write() funciton.
 	"""
 	def setUp(self):
-		self.audioOutput = baseIO.WriteAudio(TEST_WRITE_FILE, 
+		self.outputSignal = baseIO.BaseWrite(TEST_WRITE_FILE, 
 												'float', 
 												2, 
 												32, 
@@ -54,7 +54,7 @@ class PackAndWriteTestMethods(unittest.TestCase):
 	
 	def test_pack_and_write_utf(self):
 		"""
-		Test that WriteAudio.pack_and_write() correctly packs and
+		Test that BaseWrite.pack_and_write() correctly packs and
 		writes UTF-8 strings of various length and endianness.
 		"""
 		paramNestedList = [
@@ -72,8 +72,8 @@ class PackAndWriteTestMethods(unittest.TestCase):
 		
 		for parameterList in paramNestedList:
 			with self.subTest(utf_str = parameterList):
-				# set headerDict['test']
-				self.audioOutput.headerDict['test'] = parameterList[0]
+				# set signalParams['test']
+				self.outputSignal.signalParams['test'] = parameterList[0]
 				# handle endianness
 				if parameterList[1] == 'little':
 					packStr = baseIO.LITTLE_UTF
@@ -82,7 +82,7 @@ class PackAndWriteTestMethods(unittest.TestCase):
 				# write utf to file
 				with open(TEST_WRITE_FILE, 'wb') as writeStream:
 					writeStream.truncate()
-					self.audioOutput.pack_and_write(writeStream, (
+					self.outputSignal.pack_and_write(writeStream, (
 						(packStr, 'test', len(parameterList[0])),
 					))
 				# read utf
@@ -90,15 +90,15 @@ class PackAndWriteTestMethods(unittest.TestCase):
 				with open(TEST_WRITE_FILE, 'rb') as readStream:
 					binary += readStream.read(len(parameterList[0]))
 				if packStr == baseIO.BIG_UTF:
-					self.assertEqual(self.audioOutput.headerDict['test'], 
+					self.assertEqual(self.outputSignal.signalParams['test'], 
 									 binary.decode('utf-8'))
 				elif packStr == baseIO.LITTLE_UTF:
-					self.assertEqual(self.audioOutput.headerDict['test'], 
+					self.assertEqual(self.outputSignal.signalParams['test'], 
 									 binary.decode('utf-8')[::-1])
 					
 	def test_pack_and_write_int(self):
 		"""
-		Test that WriteAudio.pack_and_write() correctly packs and writes
+		Test that BaseWrite.pack_and_write() correctly packs and writes
 		integers of various length, endianness, and signed/not-signed.
 		"""
 		paramNestedList = [
@@ -118,8 +118,8 @@ class PackAndWriteTestMethods(unittest.TestCase):
 		
 		for parameterList in paramNestedList:
 			with self.subTest(numBytes_byteorder_signed = parameterList):
-				# set headerDict['test']
-				self.audioOutput.headerDict['test'] = \
+				# set signalParams['test']
+				self.outputSignal.signalParams['test'] = \
 					int((2**((parameterList[0]*8) - 1)) - 1)
 				# handle endianness
 				if parameterList[1] == 'little' and parameterList[2] == True:
@@ -134,7 +134,7 @@ class PackAndWriteTestMethods(unittest.TestCase):
 				# write utf to file
 				with open(TEST_WRITE_FILE, 'wb') as writeStream:
 					writeStream.truncate()
-					self.audioOutput.pack_and_write(writeStream, (
+					self.outputSignal.pack_and_write(writeStream, (
 						(packStr, 'test', parameterList[0]),
 					))
 				# read int
@@ -143,29 +143,29 @@ class PackAndWriteTestMethods(unittest.TestCase):
 					binary += readStream.read(parameterList[0])
 				# assert
 				if packStr == baseIO.LITTLE_INT:
-					self.assertEqual(self.audioOutput.headerDict['test'], 
+					self.assertEqual(self.outputSignal.signalParams['test'], 
 									 int.from_bytes(binary, 
 									 				byteorder='little', 
 									 				signed=True))
 				elif packStr == baseIO.LITTLE_UINT:
-					self.assertEqual(self.audioOutput.headerDict['test'], 
+					self.assertEqual(self.outputSignal.signalParams['test'], 
 									 int.from_bytes(binary, 
 									 				byteorder='little', 
 									 				signed=False))
 				elif packStr == baseIO.BIG_INT:
-					self.assertEqual(self.audioOutput.headerDict['test'], 
+					self.assertEqual(self.outputSignal.signalParams['test'], 
 									 int.from_bytes(binary, 
 									 				byteorder='big', 
 									 				signed=True))
 				elif packStr == baseIO.BIG_UINT:
-					self.assertEqual(self.audioOutput.headerDict['test'], 
+					self.assertEqual(self.outputSignal.signalParams['test'], 
 									 int.from_bytes(binary, 
 									 				byteorder='big', 
 									 				signed=False))
 
 	def test_pack_multiple(self):
 		"""
-		Test that WriteAudio.pack_and_write() correctly packs and writes
+		Test that BaseWrite.pack_and_write() correctly packs and writes
 		multiple values.
 		"""
 		paramNestedList = [
@@ -193,15 +193,15 @@ class PackAndWriteTestMethods(unittest.TestCase):
 			['arandomstring', 'big']
 		]
 		
-		# Load the headerDict{}
+		# Load the signalParams{}
 		keyList = []
 		for i in range(len(paramNestedList)):
 			key = 'key' + str(i)
 			if isinstance(paramNestedList[i][0], int):
-				self.audioOutput.headerDict[key] = \
+				self.outputSignal.signalParams[key] = \
 					int(2**((paramNestedList[i][0] * 8) - 1) - 1)
 			elif isinstance(paramNestedList[i][0], str):
-				self.audioOutput.headerDict[key] = paramNestedList[i][0]
+				self.outputSignal.signalParams[key] = paramNestedList[i][0]
 			else:
 				raise
 			keyList.append(key)
@@ -248,7 +248,7 @@ class PackAndWriteTestMethods(unittest.TestCase):
 				else:
 					raise
 			nestedTuple = (tupleList[:])
-			self.audioOutput.pack_and_write(writeStream, nestedTuple)	
+			self.outputSignal.pack_and_write(writeStream, nestedTuple)	
 		# Read and test
 		with open(TEST_WRITE_FILE, 'rb') as readStream:
 			for i in range(len(paramNestedList)):

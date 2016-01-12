@@ -19,30 +19,30 @@ TEST_READ_FILE = TEST_DATA_DIR + '/test_read_file.txt'
 
 class ReadAudioInitTestMethods(unittest.TestCase):
 	"""
-	Methods to test the initialization of a ReadAudio object.
+	Methods to test the initialization of a BaseRead object.
 	"""
 	def setUp(self):
 		with open(TEST_READ_FILE, 'wb') as writeStream:
 			writeStream.write(bytearray(1))
 	
 	def test_init(self):
-		audioInput = baseIO.ReadAudio(TEST_READ_FILE)
-		self.assertIsInstance(audioInput, baseIO.ReadAudio)
+		inputSignal = baseIO.BaseRead(TEST_READ_FILE)
+		self.assertIsInstance(inputSignal, baseIO.BaseRead)
 
 class UnpackIntAndAdvanceTestMethods(unittest.TestCase):
 	"""
-	Methods to test the ReadAudio.unpack_int() method.
+	Methods to test the BaseRead.unpack_int() method.
 	"""
 	
 	def setUp(self):
-		self.audioInput = baseIO.ReadAudio(TEST_READ_FILE)
+		self.inputSignal = baseIO.BaseRead(TEST_READ_FILE)
 	
 	def tearDown(self):
 		pass
 	
 	def test_unpack_value_with_correct_data(self):
 		"""
-		Tests the unpacked integer value of ReadAudio.unpack_int()
+		Tests the unpacked integer value of BaseRead.unpack_int()
 		method.
 		"""
 		paramNestedList = [
@@ -65,22 +65,22 @@ class UnpackIntAndAdvanceTestMethods(unittest.TestCase):
 				numbytes = parameterList[0]
 				integer = (2**(parameterList[0] - 1) -1)
 				
-				self.audioInput.readOffset = 0
-				self.audioInput.byteArray = bytearray()
-				self.audioInput.byteArray += \
+				self.inputSignal.readOffset = 0
+				self.inputSignal.byteArray = bytearray()
+				self.inputSignal.byteArray += \
 					(integer).to_bytes(numbytes, 
 										byteorder=parameterList[1], 
 										signed=parameterList[2])
 				unpackedInt = \
-					self.audioInput.unpack_int(numbytes, 
+					self.inputSignal.unpack_int(numbytes, 
 												 byteorder=parameterList[1], 
 												 signed=parameterList[2])
 				self.assertEqual(integer, unpackedInt)
 	
 	def test_readOffset_value_with_correct_data(self):
 		"""
-		Tests the ReadAudio object's readOffset value after calling
-		ReadAudio.unpack_int() method.
+		Tests the BaseRead object's readOffset value after calling
+		BaseRead.unpack_int() method.
 		"""
 		paramNestedList = [
 			[1, 'little', True],
@@ -102,17 +102,17 @@ class UnpackIntAndAdvanceTestMethods(unittest.TestCase):
 				numbytes = parameterList[0]
 				integer = (2**(parameterList[0] - 1) -1)
 				
-				self.audioInput.readOffset = 0
-				self.audioInput.byteArray = bytearray()
-				self.audioInput.byteArray += \
+				self.inputSignal.readOffset = 0
+				self.inputSignal.byteArray = bytearray()
+				self.inputSignal.byteArray += \
 					(integer).to_bytes(numbytes, 
 										byteorder=parameterList[1], 
 										signed=parameterList[2])
 				unpackedInt = \
-					self.audioInput.unpack_int(numbytes, 
+					self.inputSignal.unpack_int(numbytes, 
 												 byteorder=parameterList[1], 
 												 signed=parameterList[2])
-				self.assertEqual(self.audioInput.readOffset, numbytes)
+				self.assertEqual(self.inputSignal.readOffset, numbytes)
 		
 	def test_unpack_value_is_zero_beyond_readLen(self):
 		"""
@@ -141,14 +141,14 @@ class UnpackIntAndAdvanceTestMethods(unittest.TestCase):
 				numbytes = parameterList[0]
 				integer = (2**(parameterList[0] - 1) -1)
 				
-				self.audioInput.readOffset = numbytes + 1
-				self.audioInput.byteArray = bytearray()
-				self.audioInput.byteArray += \
+				self.inputSignal.readOffset = numbytes + 1
+				self.inputSignal.byteArray = bytearray()
+				self.inputSignal.byteArray += \
 					(integer).to_bytes(numbytes, 
 										byteorder=parameterList[1], 
 										signed=parameterList[2])
 				unpackedInt = \
-					self.audioInput.unpack_int(numbytes, 
+					self.inputSignal.unpack_int(numbytes, 
 												 byteorder=parameterList[1], 
 												 signed=parameterList[2])
 				self.assertEqual(0, unpackedInt)
@@ -156,17 +156,17 @@ class UnpackIntAndAdvanceTestMethods(unittest.TestCase):
 
 class UnpackUtfAndAdvanceTestMethods(unittest.TestCase):
 	"""
-	Methods to test the ReadAudio.unpack_utf() method.
+	Methods to test the BaseRead.unpack_utf() method.
 	"""
 	def setUp(self):
-		self.audioInput = baseIO.ReadAudio(TEST_READ_FILE)
+		self.inputSignal = baseIO.BaseRead(TEST_READ_FILE)
 	
 	def tearDown(self):
 		pass
 		
 	def test_unpack_value_with_correct_data(self):
 		"""
-		Tests the unpacked UTF-8 string value of ReadAudio.unpack_utf()
+		Tests the unpacked UTF-8 string value of BaseRead.unpack_utf()
 		method.
 		"""
 		paramList = ['RIFF', 'WAVE', 'foo', 'bar', 'arandomstring']
@@ -176,16 +176,16 @@ class UnpackUtfAndAdvanceTestMethods(unittest.TestCase):
 				numbytes = len(parameter)
 				stringBin = parameter.encode("utf-8")
 				
-				self.audioInput.readOffset = 0
-				self.audioInput.byteArray = bytearray()
-				self.audioInput.byteArray += stringBin
-				unpackedString = self.audioInput.unpack_utf(numbytes)
+				self.inputSignal.readOffset = 0
+				self.inputSignal.byteArray = bytearray()
+				self.inputSignal.byteArray += stringBin
+				unpackedString = self.inputSignal.unpack_utf(numbytes)
 				self.assertEqual(parameter, unpackedString)
 
 	def test_readOffset_value_with_correct_data(self):
 		"""
-		Tests the ReadAudio object's readOffset value after calling
-		ReadAudio.unpack_utf() method.
+		Tests the BaseRead object's readOffset value after calling
+		BaseRead.unpack_utf() method.
 		"""
 		paramList = ['RIFF', 'WAVE', 'foo', 'bar', 'arandomstring']
 		
@@ -194,11 +194,11 @@ class UnpackUtfAndAdvanceTestMethods(unittest.TestCase):
 				numbytes = len(parameter)
 				stringBin = parameter.encode("utf-8")
 				
-				self.audioInput.readOffset = 0
-				self.audioInput.byteArray = bytearray()
-				self.audioInput.byteArray += stringBin
-				unpackedString = self.audioInput.unpack_utf(numbytes)
-				self.assertEqual(self.audioInput.readOffset, numbytes)
+				self.inputSignal.readOffset = 0
+				self.inputSignal.byteArray = bytearray()
+				self.inputSignal.byteArray += stringBin
+				unpackedString = self.inputSignal.unpack_utf(numbytes)
+				self.assertEqual(self.inputSignal.readOffset, numbytes)
 	
 	def test_unpack_value_is_zero_beyond_readLen(self):
 		"""
@@ -214,27 +214,27 @@ class UnpackUtfAndAdvanceTestMethods(unittest.TestCase):
 				numbytes = len(parameter)
 				stringBin = parameter.encode("utf-8")
 				
-				self.audioInput.readOffset = numbytes + 1
-				self.audioInput.byteArray = bytearray()
-				self.audioInput.byteArray += stringBin
-				unpackedString = self.audioInput.unpack_utf(numbytes)
+				self.inputSignal.readOffset = numbytes + 1
+				self.inputSignal.byteArray = bytearray()
+				self.inputSignal.byteArray += stringBin
+				unpackedString = self.inputSignal.unpack_utf(numbytes)
 				self.assertEqual(unpackedString, '')
 
 
 
 class ReadAndAssignTestMethods(unittest.TestCase):
 	"""
-	Methods to test the ReadAudio.read_and_assign() method.
+	Methods to test the BaseRead.read_and_assign() method.
 	"""
 	def setUp(self):
-		self.audioInput = baseIO.ReadAudio(TEST_READ_FILE)
+		self.inputSignal = baseIO.BaseRead(TEST_READ_FILE)
 	
 	def tearDown(self):
 		pass
 	
 	def test_assign_utf(self):
 		"""
-		Test that ReadAudio.read_and_assign() correctly reads and
+		Test that BaseRead.read_and_assign() correctly reads and
 		assigns UTF-8 strings of various length and endianness.
 		"""
 		paramNestedList = [
@@ -265,21 +265,21 @@ class ReadAndAssignTestMethods(unittest.TestCase):
 				# read utf
 				with open(TEST_DATA_DIR + 
 						  '/test_read_and_assign.txt', 'rb') as readStream:
-					self.audioInput.read_and_assign(readStream, 
+					self.inputSignal.read_and_assign(readStream, 
 												 len(parameterList[0]), 
 												 ((assignStr, 
 												 'test', 
 												 len(parameterList[0])),))
 				if assignStr == baseIO.BIG_UTF:
-					self.assertEqual(self.audioInput.headerDict['test'], 
+					self.assertEqual(self.inputSignal.signalParams['test'], 
 									 parameterList[0])
 				elif assignStr == baseIO.LITTLE_UTF:
-					self.assertEqual(self.audioInput.headerDict['test'], 
+					self.assertEqual(self.inputSignal.signalParams['test'], 
 									 parameterList[0][::-1])
 	
 	def test_assign_int(self):
 		"""
-		Test that ReadAudio.read_and_assign() correctly reads and assigns
+		Test that BaseRead.read_and_assign() correctly reads and assigns
 		integers of various length, endianness, and signed/not-signed.
 		"""
 		paramNestedList = [
@@ -322,16 +322,16 @@ class ReadAndAssignTestMethods(unittest.TestCase):
 				# read int
 				with open(TEST_DATA_DIR + 
 						  '/test_read_and_assign.txt', 'rb') as readStream:
-					self.audioInput.read_and_assign(readStream, 
+					self.inputSignal.read_and_assign(readStream, 
 												 parameterList[0], 
 												 ((assignStr, 
 												  'test', 
 												  parameterList[0]),))
-				self.assertEqual(self.audioInput.headerDict['test'], integer)
+				self.assertEqual(self.inputSignal.signalParams['test'], integer)
 
 	def test_multiple_assignments(self):
 		"""
-		Test that ReadAudio.read_and_assign() correctly reads and assigns
+		Test that BaseRead.read_and_assign() correctly reads and assigns
 		multiple values from a read.
 		"""
 		paramNestedList = [
@@ -423,7 +423,7 @@ class ReadAndAssignTestMethods(unittest.TestCase):
 		nestedTuple = (nList[:])
 		with open(TEST_DATA_DIR + 
 				  '/test_read_and_assign.txt', 'rb') as readStream:
-			self.audioInput.read_and_assign(readStream, totalLen, nestedTuple)
+			self.inputSignal.read_and_assign(readStream, totalLen, nestedTuple)
 		for i in range(len(nList)):
 			with self.subTest(assignment=assignmentList[i]):
 				originalValue = None
@@ -434,12 +434,12 @@ class ReadAndAssignTestMethods(unittest.TestCase):
 					originalValue = paramNestedList[i][0]
 				else:
 					raise
-				self.assertEqual(self.audioInput.headerDict[assignmentList[i]], 
+				self.assertEqual(self.inputSignal.signalParams[assignmentList[i]], 
 								 originalValue)
 		
 	def test_assign_past_read_len(self):
 		"""
-		Test that ReadAudio.read_and_assign() all assignments past the
+		Test that BaseRead.read_and_assign() all assignments past the
 		read length are assigned as zero (numeric type) or '' (string type).
 		"""
 		paramNestedList = [
@@ -532,7 +532,7 @@ class ReadAndAssignTestMethods(unittest.TestCase):
 		nestedTuple = (nList[:])
 		with open(TEST_DATA_DIR + 
 				  '/test_read_and_assign.txt', 'rb') as readStream:
-			self.audioInput.read_and_assign(readStream, 1, nestedTuple)
+			self.inputSignal.read_and_assign(readStream, 1, nestedTuple)
 		for i in range(len(nList)):
 			with self.subTest(assignment=assignmentList[i]):
 				expectedValue = None
@@ -542,7 +542,7 @@ class ReadAndAssignTestMethods(unittest.TestCase):
 					expectedValue = ''
 				else:
 					raise
-				self.assertEqual(self.audioInput.headerDict[assignmentList[i]], 
+				self.assertEqual(self.inputSignal.signalParams[assignmentList[i]], 
 								 expectedValue)
 
 

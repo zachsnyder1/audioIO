@@ -43,7 +43,7 @@ class WavIOEngineInitTestMethods(unittest.TestCase):
 		"""
 		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, 'PCM', 2, 16, 44100)
 		self.assertIsInstance(writeAudioObj, wavIO.WriteWav)
-		self.assertEqual(writeAudioObj.headerDict, {
+		self.assertEqual(writeAudioObj.signalParams, {
 			baseIO.CORE_KEY_FMT: 'PCM',
 			baseIO.CORE_KEY_NUM_CHANNELS: 2,
 			baseIO.CORE_KEY_BIT_DEPTH: 16,
@@ -65,10 +65,10 @@ class WavInitHeaderTestMethods(unittest.TestCase):
 		reachBack = 0
 		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, 'PCM', 2, 16, 44100)
 		
-		readAudioObj.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = 100
+		readAudioObj.signalParams[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = 100
 		writeAudioObj.init_header(readAudioObj, reachBack)
 		
-		self.assertEqual(writeAudioObj.headerDict, {
+		self.assertEqual(writeAudioObj.signalParams, {
 			baseIO.CORE_KEY_SAMPLES_PER_CHANNEL: 100,
 			wavIO.KEY_CHUNK_ID: wavIO.RIFF_CHUNK_ID,
 			wavIO.KEY_CHUNK_SIZE: 436,
@@ -98,10 +98,10 @@ class WavInitHeaderTestMethods(unittest.TestCase):
 		reachBack = 0
 		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, 'float', 2, 32, 44100)
 		
-		readAudioObj.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = 100
+		readAudioObj.signalParams[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = 100
 		writeAudioObj.init_header(readAudioObj, reachBack)
 		
-		self.assertEqual(writeAudioObj.headerDict, {
+		self.assertEqual(writeAudioObj.signalParams, {
 			baseIO.CORE_KEY_SAMPLES_PER_CHANNEL: 100,
 			wavIO.KEY_CHUNK_ID: wavIO.RIFF_CHUNK_ID,
 			wavIO.KEY_CHUNK_SIZE: 850,

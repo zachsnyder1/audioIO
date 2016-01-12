@@ -1,15 +1,21 @@
 """
-Contains audioIO base classes, including exception classes.
+This module holds the abstract base classes that declare an interface
+for I/O operations used during processing by an Engine object. This
+interface is implemented individually for each specific file format by
+child classes (e.g. the classes of the wav_io module implement the
+interface for a subset of the .WAV file format). In addition to this
+abstract interface, certain (internal-use) helper methods are defined
+that reduce the complexity of scripting common I/O tasks.
 """
 
 # <<<------ CONSTANTS ----->>>
 	
-# Audio Formats
+# Signal Formats
 FLOAT = 'float'
 PCM = 'PCM'
 	
-# Core headerDict keys
-CORE_KEY_FMT = 'audioFormatStr'
+# Core signalParams keys
+CORE_KEY_FMT = 'signalFormatStr'
 CORE_KEY_SIGNED = 'signed'
 CORE_KEY_NUM_CHANNELS = 'numChannels'
 CORE_KEY_BIT_DEPTH = 'bitDepth'
@@ -45,50 +51,57 @@ class ReadFileEmpty(Exception):
 	"""
 	pass
 
-class IncompatibleAudioFormat(Exception):
+class IncompatibleFileFormat(Exception):
 	"""
 	Raised when the format of the read file is not covered by
-	the module.
+	the framework.
 	"""
 	pass
 
 class AssignmentIdError(Exception):
 	"""
-	Raised when the ReadAudio.read_and_assign() method recieves
+	Raised when the BaseRead.read_and_assign() method recieves
 	an unexpected assignment ID string.
 	"""
 	pass
 
 class PackIdError(Exception):
 	"""
-	Raised when the ReadAudio.pack_and_write() method recieves
+	Raised when the BaseRead.pack_and_write() method recieves
 	an unexpected packing ID string.
 	"""
 	pass
 
 
 
-class ReadAudio:
+class BaseRead:
 	"""
-	This base class for reading audio provides a template and helper
-	functions for inheriting classes.  Each file type that is supported
-	consists of a read class and a write class, which iherit from 
-	ReadAudio and WriteAudio respectively.  Two methods of ReadAudio
-	need to be overridden for in the inheriting class:
+	The abstract base class that declares an interface for reading the
+	header of a signal file, and then unpacking the sample data, buffer
+	by buffer, from binary into a nested list. Helper method
+	.read_and_assign() allows child classes to read and parse the file
+	header in a concise way. Two abstract operations of BaseRead
+	need to be overridden in inheriting classes:
 	
-	1) read_header(self, readStream)
-	2) unpack(self)
+	1) .read_header()
+	2) .unpack()
 	
-	These methods are used by a Engine object in its process() method.
+	These methods are used by some Engine classes in their process() method.
 	"""
 	def __init__(self, targetFile):
 		"""
+		Accepts:
+		
+		1) targetFile   ==> The path the read file.
+		
+		Initializes instance vars:
+		
 		self.readOffset ==> Used in helper functions to keep track of the
 							current position for future reads.
-		self.headerLen  ==> Used to find the beginning of the audio data
+		self.headerLen  ==> Used to find the beginning of the signal data
 							during processing.
-		self.headerDict ==> Used to store the values read from the header
-							of the audio file being read.
+		self.signalParams ==> Used to store the values read from the header
+							of the read file.
 		self.byteArray  ==> Used to store the binary read during the
 							read_header() call.
 		self.targetFile ==> The only parameter taken by the constructor,
@@ -96,7 +109,7 @@ class ReadAudio:
 		"""
 		self.readOffset = 0
 		self.headerLen = 0
-		self.headerDict = {}
+		self.signalParams = {}
 		self.byteArray = bytearray()
 		self.targetFile = targetFile
 
@@ -105,9 +118,9 @@ class ReadAudio:
 	# ------------------------------------------------------------------------
 	def read_header(self, readStream):
 		"""
-		Called in Engine().process() to populate the headerDict{} with
-		values read from the header of the read file.  Must be overridden by
-		the inheriting class.
+		Abstract operation, called in Engine().process(), to populate the
+		signalParams{} with values read from the header of the read file.  
+		Must be overridden by the inheriting class.
 		
 		Accepts one parameter:
 		
@@ -117,13 +130,13 @@ class ReadAudio:
 	
 	def unpack(self, byteArray):
 		"""
-		Called in Engine().process() to unpack the buffer binary in a way
-		that is relevant to the file type.  Must be overridden by inheriting 
-		file type class.
+		Abstract operation, called in Engine().process(), to unpack the
+		signal binary in a way that is relevant to the file type.  Must
+		be overridden by inheriting file type class.
 		
 		Accepts:
 		
-		1) byteArray  ==> The buffer binary as a byte array. 
+		1) byteArray  ==> A buffer-full of the signal binary as a byte array. 
 		
 		Returns a nested list of sample data with the format:
 		
@@ -137,14 +150,16 @@ class ReadAudio:
 	
 	def unpack_int(self, numBytes, byteorder='little', signed=False):
 		"""
-		Unpacks a slice of the binary stored in self.byteArray and returns the
-		integer value of that slice.  Defined to maximize code reuse.
+		Internal helper method that unpacks a slice of the binary stored
+		in self.byteArray and returns the integer value of that slice.
 		
 		Accepts:
 		
 		1) numBytes   ==> The size of the binary slice in bytes.
+		
 		2) byteorder ==> The byteorder of the binary. Either 'little'
 						  or 'big'; default='little'.
+						  
 		3) signed     ==> Bool indicates whether or not the integer is signed.
 						  Default=False.
 		
@@ -156,12 +171,16 @@ class ReadAudio:
 	
 	def unpack_utf(self, numBytes, byteorder='big'):
 		"""
-		Unpacks a slice of the binary stored in self.byteArray and returns
-		the decoded string based on UTF-8 encoding.
+		Internal helper method that unpacks a slice of the binary stored
+		in self.byteArray and returns a decoded string based on UTF-8
+		encoding.
 		
 		Accepts:
 		
 		1) numBytes  ==> The size of the binary slice in bytes.
+		
+		2) byteorder ==> A str indicating the endianness of the string
+						 that is being decoded
 		
 		Returns the decoded UTF-8 string.
 		"""
@@ -180,12 +199,14 @@ class ReadAudio:
 	
 	def read_and_assign(self, readStream, readLen, assignmentNestedTuple):
 		"""
-		Reads readLen bytes from readStream and makes assignments to the
-		headerDict{} based on the information in the assignmentNestedTuple.
+		An internal helper method that reads readLen bytes from readStream
+		and makes assignments to the signalParams{} based on the information
+		in the assignmentNestedTuple.
 		
 		Accepts:
 		
 		1) readStream  ==> The open read file.
+		
 		2) readLen     ==> The amount of binary to read from the file in
 						   bytes.  Equal to the sum of the length of all
 						   assignment values, but can be less if you want
@@ -197,8 +218,9 @@ class ReadAudio:
 						   That way, if the extension is missing, the values
 						   are assigned as zero (numeric-type) or '' (string-
 						   type) by default.
-		3) assignmentNestedTuple
-			==> a nested tuple, where each inner tuple contains 3 values:
+						   
+		3) assignmentNestedTuple  ==> a nested tuple, where each inner tuple
+									  contains 3 values:
 			
 			  1) assignmentIdStr - (BIG_UTF -> unpacks bin to
 			  						big-endian UTF-8 str)
@@ -214,18 +236,20 @@ class ReadAudio:
 					   			 	little-endian signed int)
 					   			 - (DIRECT -> assigns val 2 
 					   			 	directly as val 3)
-			  2) headerKey  -  The key in self.headerDict{} to which the value
+					   			 	
+			  2) headerKey  -  The key in self.signalParams{} to which the value
 			  				   will be assigned.
+			  				   
 			  3) If assignmentIdStr == DIRECT:
 			  			- The value that will be assigned to headerKey in the
-			  			  headerDict.
+			  			  signalParams.
 			  	 else:
 			  	 		- The size of the binary slice that will be 
 			  	 		  interpreted as either the int or UTF-8 string 
 			  	 		  assigned to headerKey.
 			  	 
 			  	 Either way, the third value can be a lambda expression, which
-			  	 can be used if you are trying to reference a headerDict{} key
+			  	 can be used if you are trying to reference a signalParams{} key
 			  	 before it is assigned a vlaue.
 		
 		Example of assignmentNestedTuple:
@@ -249,129 +273,132 @@ class ReadAudio:
 			for assignment in assignmentNestedTuple:
 				if assignment[0] == BIG_UTF:
 					if callable(assignment[2]):
-						self.headerDict[assignment[1]] = \
+						self.signalParams[assignment[1]] = \
 							self.unpack_utf(assignment[2]())
 					else:
-						self.headerDict[assignment[1]] = \
+						self.signalParams[assignment[1]] = \
 							self.unpack_utf(assignment[2])
 				elif assignment[0] == LITTLE_UTF:
 					if callable(assignment[2]):
-						self.headerDict[assignment[1]] = \
+						self.signalParams[assignment[1]] = \
 							self.unpack_utf(assignment[2](), 
 											byteorder='little')
 					else:
-						self.headerDict[assignment[1]] = \
+						self.signalParams[assignment[1]] = \
 							self.unpack_utf(assignment[2], 
 											byteorder='little')
 				elif assignment[0] == BIG_UINT:
 					if callable(assignment[2]):
-						self.headerDict[assignment[1]] = \
+						self.signalParams[assignment[1]] = \
 							self.unpack_int(assignment[2](), 
 											byteorder='big', 
 											signed=False)
 					else:
-						self.headerDict[assignment[1]] = \
+						self.signalParams[assignment[1]] = \
 							self.unpack_int(assignment[2], 
 											byteorder='big', 
 											signed=False)
 				elif assignment[0] == LITTLE_UINT:
 					if callable(assignment[2]):
-						self.headerDict[assignment[1]] = \
+						self.signalParams[assignment[1]] = \
 							self.unpack_int(assignment[2](), 
 											signed=False)
 					else:
-						self.headerDict[assignment[1]] = \
+						self.signalParams[assignment[1]] = \
 							self.unpack_int(assignment[2], 
 											signed=False)
 				elif assignment[0] == BIG_INT:
 					if callable(assignment[2]):
-						self.headerDict[assignment[1]] = \
+						self.signalParams[assignment[1]] = \
 							self.unpack_int(assignment[2](), 
 											byteorder='big', 
 											signed=True)
 					else:
-						self.headerDict[assignment[1]] = \
+						self.signalParams[assignment[1]] = \
 							self.unpack_int(assignment[2], 
 											byteorder='big', 
 											signed=True)
 				elif assignment[0] == LITTLE_INT:
 					if callable(assignment[2]):
-						self.headerDict[assignment[1]] = \
+						self.signalParams[assignment[1]] = \
 							self.unpack_int(assignment[2](),
 											 signed=True)
 					else:
-						self.headerDict[assignment[1]] = \
+						self.signalParams[assignment[1]] = \
 							self.unpack_int(assignment[2], 
 											signed=True)
 				elif assignment[0] == DIRECT:
 					if callable(assignment[2]):
-						self.headerDict[assignment[1]] = assignment[2]()
+						self.signalParams[assignment[1]] = assignment[2]()
 					else:
-						self.headerDict[assignment[1]] = assignment[2]
+						self.signalParams[assignment[1]] = assignment[2]
 				# If there is an unrecognized assignment string:
 				else:
 					raise AssignmentIdError('unrecognized assignment string')
 		self.headerLen += readLen
 
 
-class WriteAudio:
+class BaseWrite:
 	"""
-	This base class for writing audio provides a template and helper
-	functions for inheriting classes.  Each file type that is supported
-	consists of a read class and a write class, which iherit from 
-	ReadAudio and WriteAudio respectively.  Two methods of WriteAudio
-	need to be overridden for in the inheriting class:
+	The abstract base class that declares an interface for writing the
+	header of a signal file, and then repacking the sample data from a
+	nested list of ints or floats back into binary. Three abstract
+	operations of BaseWrite need to be overridden in inheriting classes:
 	
-	1) write_header(self, readStream)
-	2) repack(self)
+	1) .init_header()
+	2) .write_header()
+	3) .repack()
 	
-	These methods are used by a Engine object in its process() method.
+	These methods are used by some Engine classes in their process() method.
 	"""
 	def __init__(self, targetFile, format, numChannels, bitDepth, sampleRate):
 		"""
-		Constructor initializes:
-		
-		1) self.headerDict ==> A transferred copy of the headerDict{} of
-							the ReadAudio object.
-		2) self.byteArray  ==> Used to store the binary read during the
-							read_header() call.
-		
-		Constructor accepts:
+		Accepts:
 		
 		1) targetFile  ==> The path of the file to be written.
 		
-		2) format 	   ==> The audio format of the ouput file.
+		2) format 	   ==> The signal format of the ouput file.
 		
 		3) numChannels ==> The number of channels of the ouput file.
 		
 		4) bitDepth    ==> The bit depth of the ouput file.
 		
 		5) sampleRate  ==> The sample rate of the ouput file.
+		
+		Initializes instance vars:
+		
+		self.signalParams ==> Used to store the values of signal parameters
+							   
+		self.byteArray    ==> Used to store the binary that will be written
+							  in the .write_header() method.
+							   
+		self.targetFile   ==> The path of the file to which the processed
+							  signal will be written.
 		"""
 		# Init instance vars
-		self.headerDict = {}
+		self.signalParams = {}
 		self.byteArray = bytearray()
 		self.targetFile = targetFile
-		# Fill in headerDict based on other init params
-		self.headerDict[CORE_KEY_FMT] = format
-		self.headerDict[CORE_KEY_NUM_CHANNELS] = int(numChannels)
-		self.headerDict[CORE_KEY_BIT_DEPTH] = int(bitDepth)
-		self.headerDict[CORE_KEY_BYTE_DEPTH] = int(bitDepth / BYTE_SIZE)
-		self.headerDict[CORE_KEY_SAMPLE_RATE] = int(sampleRate)
+		# Fill in signalParams based on other init params
+		self.signalParams[CORE_KEY_FMT] = format
+		self.signalParams[CORE_KEY_NUM_CHANNELS] = int(numChannels)
+		self.signalParams[CORE_KEY_BIT_DEPTH] = int(bitDepth)
+		self.signalParams[CORE_KEY_BYTE_DEPTH] = int(bitDepth / BYTE_SIZE)
+		self.signalParams[CORE_KEY_SAMPLE_RATE] = int(sampleRate)
 
 	# ------------------------------------------------------------------------
 	# --------------------------- ABSTRACT OPERATIONS ------------------------
 	# ------------------------------------------------------------------------
-	def init_header(self, audioInput, reachBack):
+	def init_header(self, inputSignal, reachBack):
 		"""
-		If no file conversion, simply copy header from audioInput.  Else, 
-		populate based on conversion parameters, as well as audioInput and 
-		engineObj.  Must be overridden by inheriting file-type  write
-		class.
+		An abstract operation, called in Engine.process(), which initializes
+		the signalParams{} with values from the read file and any conversion
+		parameters that are passed as options during initialization of the 
+		Engine object.
 		
 		Accepts:
 		
-		1) audioInput    ==>  A pointer to the open read file.
+		1) inputSignal    ==>  A pointer to the open read file.
 		
 		2) reachBack  ==>  The number of samples that the plugin 
 						   algorithm will add to the file.
@@ -380,9 +407,9 @@ class WriteAudio:
 	
 	def write_header(self, writeStream):
 		"""
-		Used to write the header of the output file based on values in
-		headerDict{}.  Must be overridden by inheriting file-type write
-		class.
+		An abstract operation, called in Plugin.process(), which writes the
+		header of the output file based on values in the signalParams, after
+		it is initialized by an .init_header() call.
 		
 		Accepts:
 		
@@ -392,16 +419,17 @@ class WriteAudio:
 	
 	def repack(self, processedSampleNestedList):
 		"""
-		Called in Engine().process() to unpack the buffer binary in a way 
-		that is relevant to the file type.  Must be overridden by
-		inheriting file-type write class.
+		An abstract operation, called in Engine.process(), which accepts a
+		nested list of processed samples and repacks them back into binary
+		in the correct format, based on values in the signalParams. This
+		method is called once per buffer-full of data.
 		
 		Accepts:
 		
 		1) processedSampleNestedList  ==> A nested list of processed sample
 										  data.
 		
-		Returns a bytearray of the processed audio data.
+		Returns a bytearray of the processed signal data.
 		"""
 		return bytearray()
 	
@@ -411,11 +439,13 @@ class WriteAudio:
 	
 	def pack_and_write(self, writeStream, packNestedTuple):
 		"""
-		Packs/decodes input data into binary and then writes it to file.
+		An internal helper method that packs/decodes input data into binary
+		and then writes it to file.
 		
 		Accepts:
 		
 		1) writeStream  ==> The open write file.
+		
 		2) packNestedTuple
 			==> a nested tuple, where each inner tuple contains 3 values,
 			    unless packIdStr == DIRECT or BIG_UTF or
@@ -434,7 +464,7 @@ class WriteAudio:
 					   	   - (LITTLE_INT -> 
 					   	   		packs little-endian signed int to bin)
 					   	   - (DIRECT -> 
-					   	   		writes bin stored in headerDict as is)
+					   	   		writes bin stored in signalParams as is)
 			  2) headerKey  
 			  		If packIdStr == DIRECT:
 			  				-  The binary string that is to be written
@@ -446,7 +476,7 @@ class WriteAudio:
 			  				-  The UTF string to be written to file in
 			  					little-endian byte order.
 			  		else:
-			  				-  The key in self.headerDict{} which contains
+			  				-  The key in self.signalParams{} which contains
 			  				   the value that will be packed.
 			  3) numBytes   - The size of the binary string into which the
 			  				  value is to be packed (in bytes).
@@ -469,59 +499,59 @@ class WriteAudio:
 		for directive in packNestedTuple:	
 			if directive[0] == BIG_UTF:
 				self.byteArray += \
-					self.headerDict[directive[1]].encode('utf-8')
+					self.signalParams[directive[1]].encode('utf-8')
 			elif directive[0] == LITTLE_UTF:
 				self.byteArray += \
-					self.headerDict[directive[1]][::-1].encode('utf-8')
+					self.signalParams[directive[1]][::-1].encode('utf-8')
 			elif directive[0] == BIG_UINT:
 				if callable(directive[2]):
 					self.byteArray += \
-						self.headerDict[directive[1]].\
+						self.signalParams[directive[1]].\
 							to_bytes(directive[2](), 
 										byteorder='big', 
 										signed=False)
 				else:
 					self.byteArray += \
-						self.headerDict[directive[1]].\
+						self.signalParams[directive[1]].\
 							to_bytes(directive[2], 
 										byteorder='big', 
 										signed=False)
 			elif directive[0] == LITTLE_UINT:
 				if callable(directive[2]):
 					self.byteArray += \
-						self.headerDict[directive[1]].\
+						self.signalParams[directive[1]].\
 							to_bytes(directive[2](), 
 										byteorder='little', 
 										signed=False)
 				else:
 					self.byteArray += \
-						self.headerDict[directive[1]].\
+						self.signalParams[directive[1]].\
 							to_bytes(directive[2], 
 										byteorder='little', 
 										signed=False)
 			elif directive[0] == BIG_INT:
 				if callable(directive[2]):
 					self.byteArray += \
-						self.headerDict[directive[1]].\
+						self.signalParams[directive[1]].\
 							to_bytes(directive[2](), 
 										byteorder='big', 
 										signed=True)
 				else:
 					self.byteArray += \
-						self.headerDict[directive[1]].\
+						self.signalParams[directive[1]].\
 							to_bytes(directive[2], 
 										byteorder='big', 
 										signed=True)
 			elif directive[0] == LITTLE_INT:
 				if callable(directive[2]):
 					self.byteArray += \
-						self.headerDict[directive[1]].\
+						self.signalParams[directive[1]].\
 							to_bytes(directive[2](), 
 										byteorder='little', 
 										signed=True)
 				else:
 					self.byteArray += \
-						self.headerDict[directive[1]].\
+						self.signalParams[directive[1]].\
 							to_bytes(directive[2], 
 										byteorder='little', 
 										signed=True)
@@ -529,7 +559,7 @@ class WriteAudio:
 				if callable(directive[1]):
 					self.byteArray += directive[1]()
 				else:
-					self.byteArray += self.headerDict[directive[1]]
+					self.byteArray += self.signalParams[directive[1]]
 			else:
 				raise PackIdError('unrecognized pack type string')
 		# Write binary in bytearray to file

@@ -1,5 +1,9 @@
 """
-Base class for the engine.
+This module holds the Engine classes, which tie an object of an input
+class to an object of an output class via a hook for the plugin algorithm.
+The plugin helper methods of the BaseEngine abstract class, and the
+.__init__() and .process() methods of the concrete Engine classes
+constitute the entirety of the core user API.
 """
 import math
 import copy
@@ -23,6 +27,7 @@ OUTPUT_BIT_DEPTH = 'output_bit_depth'
 OUTPUT_SAMPLE_RATE = 'output_sample_rate'
 PLUGIN_FMT = 'plugin_format'
 PLUGIN_REACH_BACK = 'plugin_reach_back'
+
 # options default value
 DEFAULT = 'default'
 
@@ -44,7 +49,11 @@ class InvalidOutput(Exception):
 
 class BaseEngine:
 	"""
-	Abstract base class for framework engines.
+	Abstract base class for framework engines.  It defines the plugin
+	helper methods of the user API (and some of the infrastructure that
+	supports those methods), defines the initialization interface for
+	all concrete Engine classes, and declares the abstract .process()
+	and .initializeIO() operations.
 	"""
 	def __init__(self, 
 			inputEntity, 
@@ -52,13 +61,16 @@ class BaseEngine:
 			algorithm=helper.default_algorithm, 
 			options=None):
 		"""
-		Accepts and stores:
+		The initialization of BaseEngine is a template method, with one
+		hook method, .initializeIO(), which allows inheriting classes to
+		handle the init of the I/O objects.  The interface of BaseEngine
+		accepts:
 		
-		1) inputEntity   ==>  Either read file or input stream.
+		1) inputEntity   ==>  Either read file path or [input stream].
 		
-		2) outputEntity  ==>  Either write file or output stream.
+		2) outputEntity  ==>  Either write file path or [output stream].
 		
-		3) algorithm     ==>  A callback used to process the audio data.
+		3) algorithm     ==>  A callback used to process the signal data.
 		
 		4) options       ==>  A dictionary of processing/conversion options.
 		"""
@@ -100,14 +112,14 @@ class BaseEngine:
 		self.initializeIO(inputEntity, outputEntity)
 		
 		# for quick, clean access in the select_algorithm_wrapper() function:
-		self.readFormat = self.audioInput.headerDict[baseIO.CORE_KEY_FMT]
-		self.writeFormat = self.audioOutput.headerDict[baseIO.CORE_KEY_FMT]
+		self.readFormat = self.inputSignal.signalParams[baseIO.CORE_KEY_FMT]
+		self.writeFormat = self.outputSignal.signalParams[baseIO.CORE_KEY_FMT]
 		self.readBitDepth = \
-			self.audioInput.headerDict[baseIO.CORE_KEY_BIT_DEPTH]
+			self.inputSignal.signalParams[baseIO.CORE_KEY_BIT_DEPTH]
 		self.writeBitDepth = \
-			self.audioOutput.headerDict[baseIO.CORE_KEY_BIT_DEPTH]
-		self.readSigned = self.audioInput.headerDict[baseIO.CORE_KEY_SIGNED]
-		self.writeSigned = self.audioOutput.headerDict[baseIO.CORE_KEY_SIGNED]
+			self.outputSignal.signalParams[baseIO.CORE_KEY_BIT_DEPTH]
+		self.readSigned = self.inputSignal.signalParams[baseIO.CORE_KEY_SIGNED]
+		self.writeSigned = self.outputSignal.signalParams[baseIO.CORE_KEY_SIGNED]
 
 		# Create the reach back deque
 		if self.options[PLUGIN_REACH_BACK] > 0:
@@ -128,9 +140,9 @@ class BaseEngine:
 	
 	def initializeIO(self, inputEntity, outputEntity):
 		"""
-		Abstract operation that validates the input/output entities, and then
-		instantiates and initializes the self.audioInput and self.audioOutput
-		objects.
+		Abstract hook operation, called in .__init__() template method, which
+		validates the input/output entities, and then instantiates and
+		initializes the self.inputSignal and self.outputSignal objects.
 		
 		Accepts:
 		
@@ -139,8 +151,8 @@ class BaseEngine:
 		2) outputEntity ==>  The output entity passed to the Engine during
 							 initialization.
 		"""
-		self.audioInput = baseIO.ReadAudio(inputEntity)
-		self.audioOutput = baseIO.WriteAudio(outputEntity)
+		self.inputSignal = baseIO.BaseRead(inputEntity)
+		self.outputSignal = baseIO.BaseWrite(outputEntity)
 	
 	def process(self):
 		"""
@@ -154,10 +166,12 @@ class BaseEngine:
 	
 	def select_algorithm_wrapper(self):
 		"""
-		The algorithm_wrapper applies approriate data conversions based on
-		the readFile data format, requested plugin data format, and the
-		requested writeFile data format.  This method selects the correct
-		algorithm_wrapper function based on those initiation parameters.
+		The algorithm_wrapper wraps the plugin algorithm with approriate
+		data conversions based on the input data format, requested plugin
+		data format, and the requested output data format.  This method
+		selects the correct algorithm_wrapper function based on those
+		initialization parameters.  The actual wrapper methods are defined
+		in the enginehelper module.
 		"""
 		# Conditionally assign the algorithm_wrapper() function:
 		# If read format and write format are both float...
@@ -232,7 +246,7 @@ class BaseEngine:
 	
 	def update_reachback_deques(self, sampleNestedList):
 		"""
-		Appends copy of nested list of samples to the reachBackDeque,
+		Appends a copy of sampleNestedList to the reachBackDeque,
 		and appends the length of the nested list to the bufferLenDeque.
 		
 		Accepts:
@@ -243,16 +257,18 @@ class BaseEngine:
 		self.reachBackDeque.append(copy.deepcopy(sampleNestedList))
 		self.bufferLenDeque.append(len(sampleNestedList))
 	
+	# ------------------------------------------------------------------------
+	# ------------------------ PLUGIN HELPER METHODS -------------------------
+	# ------------------------------------------------------------------------
 	
+	# TIME ISSUE: takes way too long, need to revise...
 	def reach_back(self, numSamples, currBlock, currChannel):
 		"""
-		!!! TIME ISSUE !!!
-		
-		Returns the sample from the currentChannel that came
-		numSamples beforehand, based on the currentBlock within
-		the currently processing buffer-full of samples.  If the
-		numSamples is greater than the number of blocks that
-		precedes the current sample, then return zero.
+		A plugin helper method that returns the sample from the 
+		currentChannel that came numSamples beforehand, based on
+		the currentBlock within the currently processing buffer-full
+		of samples.  If the numSamples is greater than the number of
+		blocks that precedes the current sample, then return zero.
 		
 		Accepts:
 		
@@ -287,24 +303,36 @@ class BaseEngine:
 			# Return the desired sample
 			return self.reachBackDeque[index1][rbIndex][currChannel]
 	
+	# ------------------------------------------------------------------------
+	# ---------------------- END: PLUGIN HELPER METHODS ----------------------
+	# ------------------------------------------------------------------------
+	
 
 class FileToFileEngine(BaseEngine):
 	"""
-	Concrete engine for applying plugin to input file and outputing
-	to a file (hence file-to-file).
+	Concrete engine for a applying plugin algorithm to an input file
+	and outputing the processed signal to a file (hence file-to-file).
 	"""
+	
+	# ------------------------------------------------------------------------
+	# -------------------------------- OVERRIDES -----------------------------
+	# ------------------------------------------------------------------------
+	
 	def initializeIO(self, inputEntity, outputEntity):
 		"""
 		Concrete operation that validates the input/output entities, and then
-		instantiates and initializes the self.audioInput and self.audioOutput
-		objects.
+		instantiates and initializes the self.inputSignal and self.outputSignal
+		objects.  Called in the BaseEngine.__init__() template method.
 		
 		Accepts:
 		
 		1) inputEntity  ==>  The input entity passed to the Engine during
-							 initialization.
+							 initialization.  In this case, a valid path to
+							 the read file.
+							 
 		2) outputEntity ==>  The output entity passed to the Engine during
-							 initialization.
+							 initialization.  In this case, a valid path to
+							 a write file.
 		"""
 		# <<<--- BASIC VALIDATION --->>>
 		# make sure I/O entities are valid file paths
@@ -327,15 +355,15 @@ class FileToFileEngine(BaseEngine):
 		validFileExt = {
 			WAV: r'.*[.]wav$',
 		}
-		# instantiate correct audio input class:
+		# instantiate correct signal input class:
 		if re.search(validFileExt[WAV], inputEntity):
-			self.audioInput = wavIO.ReadWav(inputEntity)
+			self.inputSignal = wavIO.ReadWav(inputEntity)
 		else:
 			errorMsg = "{} file type not supported".format(inputEntity)
 			raise InvalidInput(errorMsg)
-		# initialize the audio input:
+		# initialize the signal input:
 		with open(inputEntity, 'rb') as readStream:
-			self.audioInput.read_header(readStream)
+			self.inputSignal.read_header(readStream)
 		# replace defaults in self.options dictionary:
 		defaultMap = {
 			PLUGIN_FMT: baseIO.CORE_KEY_FMT,
@@ -346,12 +374,12 @@ class FileToFileEngine(BaseEngine):
 		}
 		for key in defaultMap:
 			if self.options[key] == DEFAULT:
-				self.options[key] = self.audioInput.headerDict[defaultMap[key]]
+				self.options[key] = self.inputSignal.signalParams[defaultMap[key]]
 			else:
 				pass
-		# instantiate correct audio output class:
+		# instantiate correct signal output class:
 		if re.search(validFileExt[WAV], outputEntity):
-			self.audioOutput = wavIO.WriteWav(
+			self.outputSignal = wavIO.WriteWav(
 				outputEntity, 
 				self.options[OUTPUT_FMT],
 				self.options[OUTPUT_NUM_CHANNELS],
@@ -361,46 +389,50 @@ class FileToFileEngine(BaseEngine):
 			errorMsg = "{} file type not supported".format(outputEntity)
 			raise InvalidOutput(errorMsg)
 		# initialize:
-		self.audioOutput.init_header(
-			self.audioInput, self.options[PLUGIN_REACH_BACK])
+		self.outputSignal.init_header(
+			self.inputSignal, self.options[PLUGIN_REACH_BACK])
 
 	def process(self):
 		"""
 		Reads input file, exposes it to the plugin algorithm as a nested array
-		of sample values, then writes the processed audio to the output
+		of sample values, then writes the processed data to the output
 		file.
 		"""
-		with open(self.audioInput.targetFile, 'rb') as readStream:
-			with open(self.audioOutput.targetFile, 'wb') as writeStream:
+		with open(self.inputSignal.targetFile, 'rb') as readStream:
+			with open(self.outputSignal.targetFile, 'wb') as writeStream:
 				# Write header of output
-				self.audioOutput.write_header(writeStream)
+				self.outputSignal.write_header(writeStream)
 				# Set read stream to beginning of data
 				readStream.seek(0)
-				self.byteArray = readStream.read(self.audioInput.headerLen)
+				self.byteArray = readStream.read(self.inputSignal.headerLen)
 					
 				# Expose a nested list of samples to the callback function
 				# and write the processed data:
 				blockAlign = \
-					self.audioInput.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] * \
-					self.audioInput.headerDict[baseIO.CORE_KEY_NUM_CHANNELS]
+					self.inputSignal.signalParams[baseIO.CORE_KEY_BYTE_DEPTH] * \
+					self.inputSignal.signalParams[baseIO.CORE_KEY_NUM_CHANNELS]
 				bufferSize = baseIO.SAMPLES_PER_BUFFER * blockAlign
 				while True:
 					byteArray = readStream.read(bufferSize)   # Read Data
 					if byteArray:
 						# Unpack binary
-						sampleNestedList = self.audioInput.unpack(byteArray)
+						sampleNestedList = self.inputSignal.unpack(byteArray)
 						# EXECUTE CALLBACK
 						processedSampleNestedList = \
 							self.algorithm_wrapper(self, sampleNestedList)
 						# Pack processed data
 						processedByteArray = \
-							self.audioOutput.repack(processedSampleNestedList)
+							self.outputSignal.repack(processedSampleNestedList)
 						# Write processed buffer to file
 						writeStream.write(processedByteArray)
 					else:
 						break
 				# Don't forget to flush()
 				self.flush(writeStream)
+	
+	# ------------------------------------------------------------------------
+	# ------------------------------ END: OVERRIDES --------------------------
+	# ------------------------------------------------------------------------
 	
 	def flush(self, writeStream):
 		"""
@@ -427,7 +459,7 @@ class FileToFileEngine(BaseEngine):
 				zero = int(2**(self.readBitDepth - 1))
 			# Create a dummy nested list with all zeros
 			list = []
-			for i in range(self.audioInput.headerDict[
+			for i in range(self.inputSignal.signalParams[
 							baseIO.CORE_KEY_NUM_CHANNELS]):
 				list.append(copy.copy(zero))
 			nest = []
@@ -447,26 +479,7 @@ class FileToFileEngine(BaseEngine):
 					self.algorithm_wrapper(self, bufferFull)
 				# Pack processed data
 				processedByteArray = \
-					self.audioOutput.repack(processedSampleNestedList)
+					self.outputSignal.repack(processedSampleNestedList)
 				# Write processed buffer to file
 				writeStream.write(processedByteArray)
 				counter += baseIO.SAMPLES_PER_BUFFER
-
-
-class StreamToFileEngine(BaseEngine):
-	"""
-	"""
-	def process(self):
-		"""
-		"""
-		pass
-
-
-class StreamToStreamEngine(BaseEngine):
-	"""
-	"""
-	def process(self):
-		"""
-		"""
-		pass
-

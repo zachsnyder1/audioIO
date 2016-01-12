@@ -1,3 +1,14 @@
+"""
+This module contains concrete classes that implement methods for 
+reading, unpacking, [re]packing, and writing sample data to and 
+from .WAV files. The concrete classes ReadWav and WriteWav 
+inherit from the abstract base_io.BaseRead and base_io.BaseWrite 
+classes, respectively, and from WavBase, which contains  
+methods specific to .WAV files. Not all .WAV files are covered. This 
+module currently only supports 8- and 16-bit PCM and 32- 
+and 64-bit floating point formats.
+"""
+
 import struct
 import math
 from . import base_io as baseIO
@@ -5,7 +16,7 @@ from . import base_io as baseIO
 
 # <<<----- CONSTANTS ----->>>
 
-# WAV specific headerDict{} keys
+# WAV specific signalParams{} keys
 KEY_RIFF_ID_INDEX = 'riffIdIndex'
 KEY_WAVE_ID_INDEX = 'WAVE_IDIndex'
 KEY_FMT_ID_INDEX  = 'fmtIdIndex'
@@ -72,31 +83,31 @@ class WavBase:
 		Initializes the multiplier and data type character for the struct
 		format string.  Called at the end of read_header() override.
 		"""
-		self.headerDict[KEY_STRUCT_MULTIPLIER] = '' # initialize for later
+		self.signalParams[KEY_STRUCT_MULTIPLIER] = '' # initialize for later
 		# Supported formats:
-		if self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_PCM and \
-			self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] == baseIO.INT8_SIZE:
-			self.headerDict[KEY_STRUCT_FMT_CHAR] = 'B'
-		elif self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_PCM and \
-			self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] == baseIO.INT16_SIZE:
-			self.headerDict[KEY_STRUCT_FMT_CHAR] = 'h'
-		elif self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_FLOAT and \
-			self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] == baseIO.FLOAT_SIZE:
-			self.headerDict[KEY_STRUCT_FMT_CHAR] = 'f'
-		elif self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_FLOAT and \
-			self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] == baseIO.DOUBLE_SIZE:
-			self.headerDict[KEY_STRUCT_FMT_CHAR] = 'd'
-		# Else: raise IncompatibleAudioFormat with format description
+		if self.signalParams[KEY_AUDIO_FMT] == WAV_FMT_PCM and \
+			self.signalParams[baseIO.CORE_KEY_BYTE_DEPTH] == baseIO.INT8_SIZE:
+			self.signalParams[KEY_STRUCT_FMT_CHAR] = 'B'
+		elif self.signalParams[KEY_AUDIO_FMT] == WAV_FMT_PCM and \
+			self.signalParams[baseIO.CORE_KEY_BYTE_DEPTH] == baseIO.INT16_SIZE:
+			self.signalParams[KEY_STRUCT_FMT_CHAR] = 'h'
+		elif self.signalParams[KEY_AUDIO_FMT] == WAV_FMT_FLOAT and \
+			self.signalParams[baseIO.CORE_KEY_BYTE_DEPTH] == baseIO.FLOAT_SIZE:
+			self.signalParams[KEY_STRUCT_FMT_CHAR] = 'f'
+		elif self.signalParams[KEY_AUDIO_FMT] == WAV_FMT_FLOAT and \
+			self.signalParams[baseIO.CORE_KEY_BYTE_DEPTH] == baseIO.DOUBLE_SIZE:
+			self.signalParams[KEY_STRUCT_FMT_CHAR] = 'd'
+		# Else: raise IncompatibleFileFormat with format description
 		else:
 			try:
-				fmtStr = self.headerDict[baseIO.CORE_KEY_FMT]
+				fmtStr = self.signalParams[baseIO.CORE_KEY_FMT]
 			except KeyError:
 				fmtStr = 'unknown'
 			exStr = "{} format not supported: {}-bit {}"
 			fmtdExStr = exStr.format(self.targetFile, 
-								   self.headerDict[baseIO.CORE_KEY_BIT_DEPTH],
+								   self.signalParams[baseIO.CORE_KEY_BIT_DEPTH],
 								   fmtStr)
-			raise baseIO.IncompatibleAudioFormat(fmtdExStr)
+			raise baseIO.IncompatibleFileFormat(fmtdExStr)
 			
 	def get_struct_fmt_str(self):
 		"""
@@ -105,24 +116,25 @@ class WavBase:
 		
 		Returns the struct formatting string used during unpack()/repack().
 		"""
-		return '<' + str(self.headerDict[KEY_STRUCT_MULTIPLIER]) + \
-			self.headerDict[KEY_STRUCT_FMT_CHAR]
+		return '<' + str(self.signalParams[KEY_STRUCT_MULTIPLIER]) + \
+			self.signalParams[KEY_STRUCT_FMT_CHAR]
 
 
 
-class ReadWav(baseIO.ReadAudio, WavBase):
+class ReadWav(baseIO.BaseRead, WavBase):
 	"""
-	WAV file reader inherits from both ReadAudio and WavBase.
-	It overrides the ReadAudio.read_header() and ReadAudio.unpack()
-	methods that are called in the AudioIOEngine.process() method.
+	The concrete class that implements methods for reading .WAV audio files. 
+	Inherits from both baseIO.BaseRead and WavBase.
 	"""
 	# ------------------------------------------------------------------------
 	# -------------------------------- OVERRIDES -----------------------------
 	# ------------------------------------------------------------------------
 	def read_header(self, readStream):
 		"""
-		Override of ReadAudio.read_header().  Any further
-		initialization is tacked onto the end.
+		An implementation, specifically for .WAV files, of the abstract 
+		operation declared in baseIO.BaseRead. This method is called in 
+		Engine.process(), and populates the signalParams with values read
+		from the header of the input file.
 		
 		Accepts:
 		
@@ -141,12 +153,12 @@ class ReadWav(baseIO.ReadAudio, WavBase):
 			(baseIO.DIRECT, KEY_DATA_ID_INDEX, 
 			lambda: self.byteArray.find(DATA_ID_HEX))))
 		# Verify file format
-		if (self.headerDict[KEY_RIFF_ID_INDEX] or 
-			self.headerDict[KEY_WAVE_ID_INDEX] or
-			self.headerDict[KEY_FMT_ID_INDEX] or
-			self.headerDict[KEY_DATA_ID_INDEX]
+		if (self.signalParams[KEY_RIFF_ID_INDEX] or 
+			self.signalParams[KEY_WAVE_ID_INDEX] or
+			self.signalParams[KEY_FMT_ID_INDEX] or
+			self.signalParams[KEY_DATA_ID_INDEX]
 		) == BIN_SEARCH_FAIL:
-			raise baseIO.IncompatibleAudioFormat('file is not RIFF WAVE type')
+			raise baseIO.IncompatibleFileFormat('file is not RIFF WAVE type')
 		else:
 			pass
 		# RESET CURRENT POSITION
@@ -156,10 +168,10 @@ class ReadWav(baseIO.ReadAudio, WavBase):
 		
 		# BEGIN INIT:
 		# READ AND STORE CHUNK HEADER + fmt SUBCHUNK HEADER AND BODY
-		if self.headerDict[KEY_FACT_ID_INDEX] == BIN_SEARCH_FAIL:
-			readLen1 = self.headerDict[KEY_DATA_ID_INDEX]
+		if self.signalParams[KEY_FACT_ID_INDEX] == BIN_SEARCH_FAIL:
+			readLen1 = self.signalParams[KEY_DATA_ID_INDEX]
 		else:
-			readLen1 = self.headerDict[KEY_FACT_ID_INDEX]
+			readLen1 = self.signalParams[KEY_FACT_ID_INDEX]
 		self.read_and_assign(readStream, readLen1, (
 			(baseIO.BIG_UTF, KEY_CHUNK_ID, baseIO.INT32_SIZE),
 			(baseIO.LITTLE_UINT, KEY_CHUNK_SIZE, baseIO.INT32_SIZE),
@@ -178,22 +190,22 @@ class ReadWav(baseIO.ReadAudio, WavBase):
 			(baseIO.LITTLE_UINT, KEY_SUBFMT_AUDIO_FMT, baseIO.INT16_SIZE),
 			(baseIO.LITTLE_UINT, KEY_SUBFMT, SUBFMT_SIZE),
 			(baseIO.DIRECT, baseIO.CORE_KEY_BYTE_DEPTH, 
-			lambda: int(self.headerDict[baseIO.CORE_KEY_BIT_DEPTH] / baseIO.BYTE_SIZE))))
+			lambda: int(self.signalParams[baseIO.CORE_KEY_BIT_DEPTH] / baseIO.BYTE_SIZE))))
 		# set core key baseIO.CORE_KEY_FMT
-		if self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_PCM:
-			self.headerDict[baseIO.CORE_KEY_FMT] = baseIO.PCM
-		elif self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_FLOAT:
-			self.headerDict[baseIO.CORE_KEY_FMT] = baseIO.FLOAT
+		if self.signalParams[KEY_AUDIO_FMT] == WAV_FMT_PCM:
+			self.signalParams[baseIO.CORE_KEY_FMT] = baseIO.PCM
+		elif self.signalParams[KEY_AUDIO_FMT] == WAV_FMT_FLOAT:
+			self.signalParams[baseIO.CORE_KEY_FMT] = baseIO.FLOAT
 		else:
 			pass
 		# set core key baseIO.CORE_KEY_SIGNED
-		if self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_PCM and \
-			self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] == baseIO.INT8_SIZE:
-			self.headerDict[baseIO.CORE_KEY_SIGNED] = False
+		if self.signalParams[KEY_AUDIO_FMT] == WAV_FMT_PCM and \
+			self.signalParams[baseIO.CORE_KEY_BYTE_DEPTH] == baseIO.INT8_SIZE:
+			self.signalParams[baseIO.CORE_KEY_SIGNED] = False
 		else:
-			self.headerDict[baseIO.CORE_KEY_SIGNED] = True
+			self.signalParams[baseIO.CORE_KEY_SIGNED] = True
 		# IF NO FACT SUBCHUNK PRESENT
-		if self.headerDict[KEY_FACT_ID_INDEX] == BIN_SEARCH_FAIL:
+		if self.signalParams[KEY_FACT_ID_INDEX] == BIN_SEARCH_FAIL:
 			readLen2 = WAV_SUBCHUNK_HEAD_SIZE
 			self.read_and_assign(readStream, readLen2, (
 				(baseIO.BIG_UTF, KEY_SUBCHUNK2_ID, baseIO.INT32_SIZE),
@@ -201,37 +213,39 @@ class ReadWav(baseIO.ReadAudio, WavBase):
 				baseIO.INT32_SIZE),))
 		# IF FACT SUBCHUNK PRESENT
 		else:
-			readLen2 = ((self.headerDict[KEY_DATA_ID_INDEX] - 
-				self.headerDict[KEY_FACT_ID_INDEX]) + 
+			readLen2 = ((self.signalParams[KEY_DATA_ID_INDEX] - 
+				self.signalParams[KEY_FACT_ID_INDEX]) + 
 				WAV_SUBCHUNK_HEAD_SIZE)
 			self.read_and_assign(readStream, readLen2, (
 				(baseIO.BIG_UTF, KEY_SUBCHUNK2_ID, baseIO.INT32_SIZE),
 				(baseIO.LITTLE_UINT, KEY_SUBCHUNK2_SIZE, 
 				baseIO.INT32_SIZE),
 				(baseIO.LITTLE_UINT, KEY_DW_SAMPLE_LEN, 
-				lambda: self.headerDict[KEY_SUBCHUNK2_SIZE]),
+				lambda: self.signalParams[KEY_SUBCHUNK2_SIZE]),
 				(baseIO.BIG_UTF, KEY_SUBCHUNK3_ID, baseIO.INT32_SIZE),
 				(baseIO.LITTLE_UINT, KEY_SUBCHUNK3_SIZE, 
 				baseIO.INT32_SIZE)))
 		# ASSIGN CORE KEY samples per channel
 		try:
-			sampPerChan = self.headerDict[KEY_DW_SAMPLE_LEN]
+			sampPerChan = self.signalParams[KEY_DW_SAMPLE_LEN]
 		except KeyError:
-			if self.headerDict[KEY_SUBCHUNK2_ID] == DATA_SUBCHUNK_ID:
-				sampPerChan = int(self.headerDict[KEY_SUBCHUNK2_SIZE] / 
-					self.headerDict[KEY_BLOCK_ALIGN])
-			elif self.headerDict[KEY_SUBCHUNK3_ID] == DATA_SUBCHUNK_ID:
-				sampPerChan = int(self.headerDict[KEY_SUBCHUNK3_SIZE] / 
-					self.headerDict[KEY_BLOCK_ALIGN])
+			if self.signalParams[KEY_SUBCHUNK2_ID] == DATA_SUBCHUNK_ID:
+				sampPerChan = int(self.signalParams[KEY_SUBCHUNK2_SIZE] / 
+					self.signalParams[KEY_BLOCK_ALIGN])
+			elif self.signalParams[KEY_SUBCHUNK3_ID] == DATA_SUBCHUNK_ID:
+				sampPerChan = int(self.signalParams[KEY_SUBCHUNK3_SIZE] / 
+					self.signalParams[KEY_BLOCK_ALIGN])
 			else:
 				raise
-		self.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = sampPerChan
+		self.signalParams[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = sampPerChan
 		# ANY FURTHER INITIALIZATION:
 		self.init_struct_fmt_str()
 
 	def unpack(self, byteArray):
 		"""
-		Override of ReadAudio.unpack().
+		An implementation of the abstract unpacking operation for .WAV 
+		files. Unpacks a buffer-full of the signal data binary of the 
+		input file.
 		
 		Accepts:
 		
@@ -242,17 +256,17 @@ class ReadWav(baseIO.ReadAudio, WavBase):
 		"""
 		# Setup
 		nestedSampleList = []
-		self.headerDict[KEY_STRUCT_MULTIPLIER] = \
-			int(len(byteArray) / self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH])
+		self.signalParams[KEY_STRUCT_MULTIPLIER] = \
+			int(len(byteArray) / self.signalParams[baseIO.CORE_KEY_BYTE_DEPTH])
 		# Unpack buffer
 		bufferUnpacked = struct.unpack(self.get_struct_fmt_str(), byteArray[:])
 		# Assemble into nested list
 		for block in range(int(len(bufferUnpacked)  / 
-								self.headerDict[baseIO.CORE_KEY_NUM_CHANNELS])):
+								self.signalParams[baseIO.CORE_KEY_NUM_CHANNELS])):
 			sampleList = []
-			for i in range(self.headerDict[baseIO.CORE_KEY_NUM_CHANNELS]):
+			for i in range(self.signalParams[baseIO.CORE_KEY_NUM_CHANNELS]):
 				sampleList.append(bufferUnpacked[(block * \
-					self.headerDict[baseIO.CORE_KEY_NUM_CHANNELS])+i])
+					self.signalParams[baseIO.CORE_KEY_NUM_CHANNELS])+i])
 			nestedSampleList.append(sampleList)
 		return nestedSampleList
 	
@@ -262,113 +276,115 @@ class ReadWav(baseIO.ReadAudio, WavBase):
 
 
 
-class WriteWav(baseIO.WriteAudio, WavBase):
+class WriteWav(baseIO.BaseWrite, WavBase):
 	"""
-	WAV file writer class inherits from both WriteAudio and WavBase.  It 
-	overrides the WriteAudio.init_header(), WriteAudio.write_header(), and 
-	WriteAudio.repack() methods that are called in the AudioIOEngine.process() 
-	method.
+	The concrete class that implements methods for writing .WAV audio files. 
+	Inherits from both baseIO.BaseWrite and WavBase.
 	"""
 	# ------------------------------------------------------------------------
 	# -------------------------------- OVERRIDES -----------------------------
 	# ------------------------------------------------------------------------
 	
-	def init_header(self, audioInput, reachBack):
+	def init_header(self, inputSignal, reachBack):
 		"""
-		If no file conversion, simply copy header from audioInput.
-		Else, populate based on conversion parameters, as well as the
-		file size info caclulated from audioInput and reachBack info.
+		The .WAV implementation of the abstract .init_header() operation, 
+		which initializes the signalParams with values based on the read 
+		file and any conversion parameters that are passed as options 
+		during initialization of the Engine object.
 		
 		Accepts:
 		
-		1) audioInput    ==>  A pointer to the open read file.
+		1) inputSignal    ==>  A pointer to the open read file.
 		
 		2) reachBack  ==>  The number of samples available to the plugin
 						   algorithm for reachBack.
 		"""
 		# Set audio format code based on CORE_KEY_FMT
-		if self.headerDict[baseIO.CORE_KEY_FMT] == baseIO.FLOAT:
-			self.headerDict[KEY_AUDIO_FMT] =  WAV_FMT_FLOAT
-		elif self.headerDict[baseIO.CORE_KEY_FMT] == baseIO.PCM:
-			self.headerDict[KEY_AUDIO_FMT] = WAV_FMT_PCM
-		# Copy samples per channel from audioInput.headerDict
-		self.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = \
-			audioInput.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL]
+		if self.signalParams[baseIO.CORE_KEY_FMT] == baseIO.FLOAT:
+			self.signalParams[KEY_AUDIO_FMT] =  WAV_FMT_FLOAT
+		elif self.signalParams[baseIO.CORE_KEY_FMT] == baseIO.PCM:
+			self.signalParams[KEY_AUDIO_FMT] = WAV_FMT_PCM
+		# Copy samples per channel from inputSignal.signalParams
+		self.signalParams[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = \
+			inputSignal.signalParams[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL]
 		# Calculate fields from above
-		self.headerDict[KEY_BLOCK_ALIGN] = \
-			self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] * \
-			self.headerDict[baseIO.CORE_KEY_NUM_CHANNELS]
-		self.headerDict[KEY_BYTE_RATE] = \
-			self.headerDict[KEY_BLOCK_ALIGN] * \
-			self.headerDict[baseIO.CORE_KEY_SAMPLE_RATE]
+		self.signalParams[KEY_BLOCK_ALIGN] = \
+			self.signalParams[baseIO.CORE_KEY_BYTE_DEPTH] * \
+			self.signalParams[baseIO.CORE_KEY_NUM_CHANNELS]
+		self.signalParams[KEY_BYTE_RATE] = \
+			self.signalParams[KEY_BLOCK_ALIGN] * \
+			self.signalParams[baseIO.CORE_KEY_SAMPLE_RATE]
 		# set core key baseIO.CORE_KEY_SIGNED
-		if self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_PCM and \
-				self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] == \
+		if self.signalParams[KEY_AUDIO_FMT] == WAV_FMT_PCM and \
+				self.signalParams[baseIO.CORE_KEY_BYTE_DEPTH] == \
 				baseIO.INT8_SIZE:
-			self.headerDict[baseIO.CORE_KEY_SIGNED] = False
+			self.signalParams[baseIO.CORE_KEY_SIGNED] = False
 		else:
-			self.headerDict[baseIO.CORE_KEY_SIGNED] = True
+			self.signalParams[baseIO.CORE_KEY_SIGNED] = True
 		# init the struct fmt string
 		self.init_struct_fmt_str()
 		
 		# Populate the remaining fields:
 		# CALCULATE INTERMEDIATE VALUES
 		factChunkSizeMultiplier = \
-			math.ceil(self.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] / 
+			math.ceil(self.signalParams[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] / 
 					  (2**32))
 		dataChunkSize = \
-			int((self.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] + \
+			int((self.signalParams[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] + \
 			reachBack) * \
-			self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] * \
-			self.headerDict[baseIO.CORE_KEY_NUM_CHANNELS])
+			self.signalParams[baseIO.CORE_KEY_BYTE_DEPTH] * \
+			self.signalParams[baseIO.CORE_KEY_NUM_CHANNELS])
 		# SET ID STRINGS
-		self.headerDict[KEY_CHUNK_ID] = RIFF_CHUNK_ID
-		self.headerDict[KEY_FMT_ID] = WAVE_ID
-		self.headerDict[KEY_SUBCHUNK1_ID] = FMT_SUBCHUNK_ID
+		self.signalParams[KEY_CHUNK_ID] = RIFF_CHUNK_ID
+		self.signalParams[KEY_FMT_ID] = WAVE_ID
+		self.signalParams[KEY_SUBCHUNK1_ID] = FMT_SUBCHUNK_ID
 		# IF AUDIO FORMAT = PCM, BIT-DEPTH <= 16
-		if (self.headerDict[KEY_AUDIO_FMT] == 
-			WAV_FMT_PCM) and (self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] <= 
+		if (self.signalParams[KEY_AUDIO_FMT] == 
+			WAV_FMT_PCM) and (self.signalParams[baseIO.CORE_KEY_BYTE_DEPTH] <= 
 								baseIO.INT16_SIZE):
-			self.headerDict[KEY_SUBCHUNK1_SIZE] = FMT_CHUNK_SIZE_16
-			self.headerDict[KEY_SUBCHUNK2_ID] = DATA_SUBCHUNK_ID
-			self.headerDict[KEY_SUBCHUNK2_SIZE] = dataChunkSize
+			self.signalParams[KEY_SUBCHUNK1_SIZE] = FMT_CHUNK_SIZE_16
+			self.signalParams[KEY_SUBCHUNK2_ID] = DATA_SUBCHUNK_ID
+			self.signalParams[KEY_SUBCHUNK2_SIZE] = dataChunkSize
 		# IF AUDIO FORMAT = PCM, BIT-DEPTH = 24
 		# IN PROGRESS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		elif (self.headerDict[KEY_AUDIO_FMT] == 
-			  WAV_FMT_PCM) and (self.headerDict[baseIO.CORE_KEY_BYTE_DEPTH] == 
+		elif (self.signalParams[KEY_AUDIO_FMT] == 
+			  WAV_FMT_PCM) and (self.signalParams[baseIO.CORE_KEY_BYTE_DEPTH] == 
 			  					baseIO.INT24_SIZE):
 			pass
 		# IF AUDIO FORMAT = FLOAT
-		elif self.headerDict[KEY_AUDIO_FMT] == WAV_FMT_FLOAT:
-			self.headerDict[KEY_SUBCHUNK1_SIZE] = FMT_CHUNK_SIZE_18
-			self.headerDict[KEY_CB_SIZE] = FMT_EXT_SIZE_0
-			self.headerDict[KEY_SUBCHUNK2_ID] = FACT_SUBCHUNK_ID
-			self.headerDict[KEY_SUBCHUNK2_SIZE] = \
+		elif self.signalParams[KEY_AUDIO_FMT] == WAV_FMT_FLOAT:
+			self.signalParams[KEY_SUBCHUNK1_SIZE] = FMT_CHUNK_SIZE_18
+			self.signalParams[KEY_CB_SIZE] = FMT_EXT_SIZE_0
+			self.signalParams[KEY_SUBCHUNK2_ID] = FACT_SUBCHUNK_ID
+			self.signalParams[KEY_SUBCHUNK2_SIZE] = \
 				int(baseIO.INT32_SIZE * factChunkSizeMultiplier)
-			self.headerDict[KEY_DW_SAMPLE_LEN] = \
-				self.headerDict[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] + \
+			self.signalParams[KEY_DW_SAMPLE_LEN] = \
+				self.signalParams[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] + \
 				reachBack
-			self.headerDict[KEY_SUBCHUNK3_ID] = DATA_SUBCHUNK_ID
-			self.headerDict[KEY_SUBCHUNK3_SIZE] = dataChunkSize
+			self.signalParams[KEY_SUBCHUNK3_ID] = DATA_SUBCHUNK_ID
+			self.signalParams[KEY_SUBCHUNK3_SIZE] = dataChunkSize
 		# CALCULATE CHUNK SIZE:
-		if self.headerDict[KEY_SUBCHUNK2_ID] == DATA_SUBCHUNK_ID:
-			self.headerDict[KEY_CHUNK_SIZE] = \
+		if self.signalParams[KEY_SUBCHUNK2_ID] == DATA_SUBCHUNK_ID:
+			self.signalParams[KEY_CHUNK_SIZE] = \
 				int((2 * WAV_SUBCHUNK_HEAD_SIZE) + \
 					WAV_CHUNK_SIZE_ADDITION + \
-					self.headerDict[KEY_SUBCHUNK1_SIZE] + \
-					self.headerDict[KEY_SUBCHUNK2_SIZE])
+					self.signalParams[KEY_SUBCHUNK1_SIZE] + \
+					self.signalParams[KEY_SUBCHUNK2_SIZE])
 		else:
-			self.headerDict[KEY_CHUNK_SIZE] = \
+			self.signalParams[KEY_CHUNK_SIZE] = \
 				int((3 * WAV_SUBCHUNK_HEAD_SIZE) + \
 					WAV_CHUNK_SIZE_ADDITION + \
-					self.headerDict[KEY_SUBCHUNK1_SIZE] + \
-					self.headerDict[KEY_SUBCHUNK2_SIZE] + \
-					self.headerDict[KEY_SUBCHUNK3_SIZE])
+					self.signalParams[KEY_SUBCHUNK1_SIZE] + \
+					self.signalParams[KEY_SUBCHUNK2_SIZE] + \
+					self.signalParams[KEY_SUBCHUNK3_SIZE])
 		return
 	
 	def write_header(self, writeStream):
 		"""
-		Override of WriteAudio.write_header()
+		The .WAV implementation of the abstract .write_header() 
+		operation, which writes the header of the output file based 
+		on values in the signalParams, after it is initialized by an 
+		.init_header() call.
 		
 		Accepts:
 		
@@ -388,10 +404,10 @@ class WriteWav(baseIO.WriteAudio, WavBase):
 			(baseIO.LITTLE_UINT, KEY_BLOCK_ALIGN, baseIO.INT16_SIZE),
 			(baseIO.LITTLE_UINT, baseIO.CORE_KEY_BIT_DEPTH, baseIO.INT16_SIZE)))
 		# Handle format subchunk extension
-		if self.headerDict[KEY_SUBCHUNK1_SIZE] == FMT_CHUNK_SIZE_18:
+		if self.signalParams[KEY_SUBCHUNK1_SIZE] == FMT_CHUNK_SIZE_18:
 			self.pack_and_write(writeStream, (
 				(baseIO.LITTLE_UINT, KEY_CB_SIZE, baseIO.INT16_SIZE),))
-		elif self.headerDict[KEY_SUBCHUNK1_SIZE] == FMT_CHUNK_SIZE_40:
+		elif self.signalParams[KEY_SUBCHUNK1_SIZE] == FMT_CHUNK_SIZE_40:
 			self.pack_and_write(writeStream, (
 				(baseIO.LITTLE_UINT, KEY_CB_SIZE, baseIO.INT16_SIZE),
 				(baseIO.LITTLE_UINT, KEY_W_VALID_BPS, baseIO.INT16_SIZE),
@@ -405,10 +421,10 @@ class WriteWav(baseIO.WriteAudio, WavBase):
 			(baseIO.LITTLE_UINT, KEY_SUBCHUNK2_SIZE, baseIO.INT32_SIZE)))
 		# Conditionally handle fact subchunk, write data subchunk
 		# If fact subchunk is present
-		if self.headerDict[KEY_SUBCHUNK2_ID] != DATA_SUBCHUNK_ID:
+		if self.signalParams[KEY_SUBCHUNK2_ID] != DATA_SUBCHUNK_ID:
 			self.pack_and_write(writeStream, (
 				(baseIO.LITTLE_UINT, KEY_DW_SAMPLE_LEN, 
-				lambda: self.headerDict[KEY_SUBCHUNK2_SIZE]),
+				lambda: self.signalParams[KEY_SUBCHUNK2_SIZE]),
 				(baseIO.BIG_UTF, KEY_SUBCHUNK3_ID),
 				(baseIO.LITTLE_UINT, KEY_SUBCHUNK3_SIZE, baseIO.INT32_SIZE)))
 		else:
@@ -416,24 +432,27 @@ class WriteWav(baseIO.WriteAudio, WavBase):
 	
 	def repack(self, processedSampleNestedList):
 		"""
-		Override of WriteAudio.repack()
+		The .WAV implementation of the abstract .repack() operation, which 
+		accepts a nested list of processed samples and repacks them back 
+		into binary in the correct format, based on values in the
+		signalParams. This method is called once per buffer-full of data.
 		
 		Accepts:
 		
 		1) processedSampleNestedList  ==> A nested list of processed sample
 										  data.
 		
-		Returns a bytearray of the processed audio data.
+		Returns a bytearray of the processed signal data.
 		"""
 		# Setup
 		intTupleList = []
 		processedByteArray = bytearray()
 		# Disassemble nested list into tuple
 		for block in range(len(processedSampleNestedList)):
-			for channel in range(self.headerDict[baseIO.CORE_KEY_NUM_CHANNELS]):
+			for channel in range(self.signalParams[baseIO.CORE_KEY_NUM_CHANNELS]):
 				intTupleList.append(processedSampleNestedList[block][channel])
 		intTuple = tuple(intTupleList)
-		self.headerDict[KEY_STRUCT_MULTIPLIER] = len(intTuple)
+		self.signalParams[KEY_STRUCT_MULTIPLIER] = len(intTuple)
 		# Pack
 		processedByteArray = struct.pack(self.get_struct_fmt_str(), *intTuple)
 		return processedByteArray

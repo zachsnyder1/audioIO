@@ -616,37 +616,37 @@ class ReachBackTestMethods(unittest.TestCase):
 				
 				# Expected difference in size
 				sizeDiff = paramList[1] * \
-					engineObj.audioInput.headerDict[
+					engineObj.inputSignal.signalParams[
 						baseIO.CORE_KEY_BYTE_DEPTH] * \
-					engineObj.audioInput.headerDict[
+					engineObj.inputSignal.signalParams[
 						baseIO.CORE_KEY_NUM_CHANNELS]
 				# Store read/write chunk size
 				readChunkSize = \
-					engineObj.audioInput.headerDict[
+					engineObj.inputSignal.signalParams[
 						wavIO.KEY_CHUNK_SIZE]
 				writeChunkSize = \
-					engineObj.audioOutput.headerDict[
+					engineObj.outputSignal.signalParams[
 						wavIO.KEY_CHUNK_SIZE]
 				# Store read/write data subchunk size
-				if engineObj.audioInput.headerDict[
+				if engineObj.inputSignal.signalParams[
 						wavIO.KEY_SUBCHUNK2_ID] == \
 						wavIO.DATA_SUBCHUNK_ID:
 					readDataSubChunkSize = \
-						engineObj.audioInput.headerDict[
+						engineObj.inputSignal.signalParams[
 							wavIO.KEY_SUBCHUNK2_SIZE]
 				else:
 					readDataSubChunkSize = \
-						engineObj.audioInput.headerDict[
+						engineObj.inputSignal.signalParams[
 							wavIO.KEY_SUBCHUNK3_SIZE]
-				if engineObj.audioOutput.headerDict[
+				if engineObj.outputSignal.signalParams[
 						wavIO.KEY_SUBCHUNK2_ID] == \
 						wavIO.DATA_SUBCHUNK_ID:
 					writeDataSubChunkSize = \
-						engineObj.audioOutput.headerDict[
+						engineObj.outputSignal.signalParams[
 							wavIO.KEY_SUBCHUNK2_SIZE]
 				else:
 					writeDataSubChunkSize = \
-						engineObj.audioOutput.headerDict[
+						engineObj.outputSignal.signalParams[
 							wavIO.KEY_SUBCHUNK3_SIZE]
 				# ASSERTIONS:
 				self.assertEqual(writeChunkSize, 

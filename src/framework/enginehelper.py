@@ -1,8 +1,13 @@
+"""
+This module holds helper methods that are used to aid the
+implementation of the Engine classes.
+"""
+
 import math
 
 def clip_pcm(sampleNestedList, bitDepth):
 	"""
-	Clip the (PCM) audio signal -- make sure it does not exceed the
+	Clip the (PCM) signal -- make sure it does not exceed the
 	range of values dictated by its numeric format and bit depth.
 		
 	Accepts:
@@ -23,8 +28,8 @@ def clip_pcm(sampleNestedList, bitDepth):
 	
 def clip_float(sampleNestedList):
 	"""
-	Clip the (float) audio signal -- make sure it does not exceed the
-	range of values dictated by its numeric format and bit depth.
+	Clip the (float) signal -- make sure it does not exceed the
+	range of values dictated by its numeric format.
 	
 	Accepts:
 	
@@ -75,7 +80,7 @@ def pcm_to_float(sampleNestedList, bitDepth, signed):
 	
 	Accepts:
 	
-	1) sampleNestedList  ==>  The nested list of samles to convert.
+	1) sampleNestedList  ==>  The nested list of samples to convert.
 	
 	2) bitDepth          ==>  The bit depth of the input PCM.
 	
@@ -141,8 +146,28 @@ def default_algorithm(self, sampleNestedList):
 # ---------------------- ALGORITHM WRAPPERS: -------------------
 # --------------------------------------------------------------
 
+# The algorithm wrappers wrap the plugin algorithm with additional
+# functionality.  Specifically, they handle:
+#
+#   1) Any conversions of the data format between the input, plugin, 
+#      and output formats.
+#
+#   2) Cipping the output data after it is processed, but before it
+#      is returned.
+#
+#   3) Updating the Engine.reachBackDeque by pushing onto it the
+#      currently processing buffer-full of samples.
+#
+# The conversions are based on parameters of the input signal,
+# output signal, and the plugin environment, and the proper wrapper
+# is selected during initialization of the Engine object in the
+# Engine.select_algorithm_wrapper() method.
+
+
 def wrapper_fff(engineObj, sampleNestedList):
 	"""
+	Conditions:
+	
 	Read fmt = float, 
 	Plugin fmt = float,
 	write fmt = float
@@ -153,9 +178,13 @@ def wrapper_fff(engineObj, sampleNestedList):
 
 def wrapper_fpf(engineObj, sampleNestedList):
 	"""
+	Conditions:
+	
 	Read fmt = float, 
 	Plugin fmt = PCM,
 	write fmt = float
+	
+	NOTE: Presents the samples in 32-bit PCM.
 	"""
 	preProcessedNest = float_to_pcm(sampleNestedList, 32, True)
 	engineObj.update_reachback_deques(preProcessedNest)
@@ -165,6 +194,8 @@ def wrapper_fpf(engineObj, sampleNestedList):
 
 def wrapper_pfp(engineObj, sampleNestedList):
 	"""
+	Conditions:
+	
 	Read fmt = PCM, 
 	Plugin fmt = Float,
 	write fmt = PCM
@@ -181,6 +212,8 @@ def wrapper_pfp(engineObj, sampleNestedList):
 	
 def wrapper_ppp_unsigned(engineObj, sampleNestedList):
 	"""
+	Conditions:
+	
 	Read fmt = PCM, 
 	Plugin fmt = PCM,
 	write fmt = PCM
@@ -203,6 +236,8 @@ def wrapper_ppp_unsigned(engineObj, sampleNestedList):
 	
 def wrapper_ppp_signed_no_conversion(engineObj, sampleNestedList):
 	"""
+	Conditions:
+	
 	Read fmt = PCM, 
 	Plugin fmt = PCM,
 	write fmt = PCM
@@ -215,6 +250,8 @@ def wrapper_ppp_signed_no_conversion(engineObj, sampleNestedList):
 	
 def wrapper_ppp_signed_conversion(engineObj, sampleNestedList):
 	"""
+	Conditions:
+	
 	Read fmt = PCM, 
 	Plugin fmt = PCM,
 	write fmt = PCM
@@ -232,6 +269,8 @@ def wrapper_ppp_signed_conversion(engineObj, sampleNestedList):
 	
 def wrapper_ffp(engineObj, sampleNestedList):
 	"""
+	Conditions:
+	
 	Read fmt = Float, 
 	Plugin fmt = Float,
 	write fmt = PCM
@@ -246,6 +285,8 @@ def wrapper_ffp(engineObj, sampleNestedList):
 
 def wrapper_fpp_unsigned(engineObj, sampleNestedList):
 	"""
+	Conditions:
+	
 	Read fmt = Float, 
 	Plugin fmt = PCM,
 	write fmt = PCM
@@ -266,6 +307,8 @@ def wrapper_fpp_unsigned(engineObj, sampleNestedList):
 	
 def wrapper_fpp_signed(engineObj, sampleNestedList):
 	"""
+	Conditions:
+	
 	Read fmt = Float, 
 	Plugin fmt = PCM,
 	write fmt = PCM
@@ -281,6 +324,8 @@ def wrapper_fpp_signed(engineObj, sampleNestedList):
 	
 def wrapper_pff(engineObj, sampleNestedList):
 	"""
+	Conditions:
+	
 	Read fmt = PCM, 
 	Plugin fmt = Float,
 	write fmt = Float
@@ -294,6 +339,8 @@ def wrapper_pff(engineObj, sampleNestedList):
 	
 def wrapper_ppf_unsigned(engineObj, sampleNestedList):
 	"""
+	Conditions:
+	
 	Read fmt = PCM, 
 	Plugin fmt = Float,
 	write fmt = Float
@@ -312,6 +359,8 @@ def wrapper_ppf_unsigned(engineObj, sampleNestedList):
 	
 def wrapper_ppf_signed(engineObj, sampleNestedList):
 	"""
+	Conditions:
+	
 	Read fmt = PCM, 
 	Plugin fmt = Float,
 	write fmt = Float
