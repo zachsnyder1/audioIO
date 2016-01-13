@@ -7,7 +7,7 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(),
 	os.path.expanduser(__file__))))
 PACKAGE_PATH = os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_ROOT))
 sys.path.append(PACKAGE_PATH)
-from src.framework import base_io as baseIO
+from src.signalhook import base_io as baseIO
 
 # Set a read file for testing
 TEST_DATA_DIR = os.path.normpath(

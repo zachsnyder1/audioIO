@@ -3,3 +3,4 @@
 /test/testData/**
 /test/testLogs/**
 /main.py
+/src/*.egg-info
