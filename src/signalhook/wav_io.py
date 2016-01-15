@@ -294,7 +294,7 @@ class WavOut(baseIO.BaseFileOut, WavBase):
 		
 		Accepts:
 		
-		1) inputSignal    ==>  A pointer to the open read file.
+		1) inputSignal    ==>  A pointer to the input signal object.
 		
 		2) reachBack  ==>  The number of samples available to the plugin
 						   algorithm for reachBack.

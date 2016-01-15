@@ -407,7 +407,7 @@ class BaseFileOut:
 	
 	def write_header(self, writeStream):
 		"""
-		An abstract operation, called in Plugin.process(), which writes the
+		An abstract operation, called in Engine.process(), which writes the
 		header of the output file based on values in the signalParams, after
 		it is initialized by an .init_header() call.
 		

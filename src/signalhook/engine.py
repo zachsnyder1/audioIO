@@ -310,7 +310,7 @@ class BaseEngine:
 
 class FileToFileEngine(BaseEngine):
 	"""
-	Concrete engine for a applying plugin algorithm to an input file
+	Concrete engine for applying a plugin algorithm to an input file
 	and outputing the processed signal to a file (hence file-to-file).
 	"""
 	
