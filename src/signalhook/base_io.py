@@ -1,9 +1,9 @@
 """
 This module holds the abstract base classes that declare an interface
 for I/O operations used during processing by an Engine object. This
-interface is implemented individually for each specific file format by
-child classes (e.g. the classes of the wav_io module implement the
-interface for a subset of the .WAV file format). In addition to this
+interface is implemented individually for each specific file or stream
+format by child classes (e.g. the classes of the wav_io module implement
+the interface for a subset of the .WAV file format). In addition to this
 abstract interface, certain (internal-use) helper methods are defined
 that reduce the complexity of scripting common I/O tasks.
 """
@@ -60,27 +60,27 @@ class IncompatibleFileFormat(Exception):
 
 class AssignmentIdError(Exception):
 	"""
-	Raised when the BaseRead.read_and_assign() method recieves
+	Raised when the BaseFileIn.read_and_assign() method recieves
 	an unexpected assignment ID string.
 	"""
 	pass
 
 class PackIdError(Exception):
 	"""
-	Raised when the BaseRead.pack_and_write() method recieves
+	Raised when the BaseFileIn.pack_and_write() method recieves
 	an unexpected packing ID string.
 	"""
 	pass
 
 
 
-class BaseRead:
+class BaseFileIn:
 	"""
 	The abstract base class that declares an interface for reading the
 	header of a signal file, and then unpacking the sample data, buffer
 	by buffer, from binary into a nested list. Helper method
 	.read_and_assign() allows child classes to read and parse the file
-	header in a concise way. Two abstract operations of BaseRead
+	header in a concise way. Two abstract operations of BaseFileIn
 	need to be overridden in inheriting classes:
 	
 	1) .read_header()
@@ -338,12 +338,12 @@ class BaseRead:
 		self.headerLen += readLen
 
 
-class BaseWrite:
+class BaseFileOut:
 	"""
 	The abstract base class that declares an interface for writing the
 	header of a signal file, and then repacking the sample data from a
 	nested list of ints or floats back into binary. Three abstract
-	operations of BaseWrite need to be overridden in inheriting classes:
+	operations of BaseFileOut need to be overridden in inheriting classes:
 	
 	1) .init_header()
 	2) .write_header()

@@ -20,14 +20,14 @@ TEST_WRITE_FILE = os.path.normpath(
 
 class WriteAudioInitTestMethods(unittest.TestCase):
 	"""
-	Methods to test the initialization of a BaseWrite object.
+	Methods to test the initialization of a BaseFileOut object.
 	"""
 	def test_init(self):
 		"""
 		Basic init, all conversion parameters are set to valid values.
 		"""
-		outputSignal = baseIO.BaseWrite(TEST_WRITE_FILE, 'PCM', 2, 16, 44100)
-		self.assertIsInstance(outputSignal, baseIO.BaseWrite)
+		outputSignal = baseIO.BaseFileOut(TEST_WRITE_FILE, 'PCM', 2, 16, 44100)
+		self.assertIsInstance(outputSignal, baseIO.BaseFileOut)
 		self.assertEqual(outputSignal.signalParams, {
 			baseIO.CORE_KEY_FMT: 'PCM',
 			baseIO.CORE_KEY_NUM_CHANNELS: 2,
@@ -40,10 +40,10 @@ class WriteAudioInitTestMethods(unittest.TestCase):
 
 class PackAndWriteTestMethods(unittest.TestCase):
 	"""
-	Methods to test the BaseWrite.pack_and_write() funciton.
+	Methods to test the BaseFileOut.pack_and_write() funciton.
 	"""
 	def setUp(self):
-		self.outputSignal = baseIO.BaseWrite(TEST_WRITE_FILE, 
+		self.outputSignal = baseIO.BaseFileOut(TEST_WRITE_FILE, 
 												'float', 
 												2, 
 												32, 
@@ -54,7 +54,7 @@ class PackAndWriteTestMethods(unittest.TestCase):
 	
 	def test_pack_and_write_utf(self):
 		"""
-		Test that BaseWrite.pack_and_write() correctly packs and
+		Test that BaseFileOut.pack_and_write() correctly packs and
 		writes UTF-8 strings of various length and endianness.
 		"""
 		paramNestedList = [
@@ -98,7 +98,7 @@ class PackAndWriteTestMethods(unittest.TestCase):
 					
 	def test_pack_and_write_int(self):
 		"""
-		Test that BaseWrite.pack_and_write() correctly packs and writes
+		Test that BaseFileOut.pack_and_write() correctly packs and writes
 		integers of various length, endianness, and signed/not-signed.
 		"""
 		paramNestedList = [
@@ -165,7 +165,7 @@ class PackAndWriteTestMethods(unittest.TestCase):
 
 	def test_pack_multiple(self):
 		"""
-		Test that BaseWrite.pack_and_write() correctly packs and writes
+		Test that BaseFileOut.pack_and_write() correctly packs and writes
 		multiple values.
 		"""
 		paramNestedList = [

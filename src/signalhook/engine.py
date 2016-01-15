@@ -151,8 +151,8 @@ class BaseEngine:
 		2) outputEntity ==>  The output entity passed to the Engine during
 							 initialization.
 		"""
-		self.inputSignal = baseIO.BaseRead(inputEntity)
-		self.outputSignal = baseIO.BaseWrite(outputEntity)
+		self.inputSignal = baseIO.BaseFileIn(inputEntity)
+		self.outputSignal = baseIO.BaseFileOut(outputEntity)
 	
 	def process(self):
 		"""
@@ -357,7 +357,7 @@ class FileToFileEngine(BaseEngine):
 		}
 		# instantiate correct signal input class:
 		if re.search(validFileExt[WAV], inputEntity):
-			self.inputSignal = wavIO.ReadWav(inputEntity)
+			self.inputSignal = wavIO.WavIn(inputEntity)
 		else:
 			errorMsg = "{} file type not supported".format(inputEntity)
 			raise InvalidInput(errorMsg)
@@ -379,7 +379,7 @@ class FileToFileEngine(BaseEngine):
 				pass
 		# instantiate correct signal output class:
 		if re.search(validFileExt[WAV], outputEntity):
-			self.outputSignal = wavIO.WriteWav(
+			self.outputSignal = wavIO.WavOut(
 				outputEntity, 
 				self.options[OUTPUT_FMT],
 				self.options[OUTPUT_NUM_CHANNELS],

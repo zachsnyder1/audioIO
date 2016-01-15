@@ -19,30 +19,30 @@ TEST_READ_FILE = TEST_DATA_DIR + '/test_read_file.txt'
 
 class ReadAudioInitTestMethods(unittest.TestCase):
 	"""
-	Methods to test the initialization of a BaseRead object.
+	Methods to test the initialization of a BaseFileIn object.
 	"""
 	def setUp(self):
 		with open(TEST_READ_FILE, 'wb') as writeStream:
 			writeStream.write(bytearray(1))
 	
 	def test_init(self):
-		inputSignal = baseIO.BaseRead(TEST_READ_FILE)
-		self.assertIsInstance(inputSignal, baseIO.BaseRead)
+		inputSignal = baseIO.BaseFileIn(TEST_READ_FILE)
+		self.assertIsInstance(inputSignal, baseIO.BaseFileIn)
 
 class UnpackIntAndAdvanceTestMethods(unittest.TestCase):
 	"""
-	Methods to test the BaseRead.unpack_int() method.
+	Methods to test the BaseFileIn.unpack_int() method.
 	"""
 	
 	def setUp(self):
-		self.inputSignal = baseIO.BaseRead(TEST_READ_FILE)
+		self.inputSignal = baseIO.BaseFileIn(TEST_READ_FILE)
 	
 	def tearDown(self):
 		pass
 	
 	def test_unpack_value_with_correct_data(self):
 		"""
-		Tests the unpacked integer value of BaseRead.unpack_int()
+		Tests the unpacked integer value of BaseFileIn.unpack_int()
 		method.
 		"""
 		paramNestedList = [
@@ -79,8 +79,8 @@ class UnpackIntAndAdvanceTestMethods(unittest.TestCase):
 	
 	def test_readOffset_value_with_correct_data(self):
 		"""
-		Tests the BaseRead object's readOffset value after calling
-		BaseRead.unpack_int() method.
+		Tests the BaseFileIn object's readOffset value after calling
+		BaseFileIn.unpack_int() method.
 		"""
 		paramNestedList = [
 			[1, 'little', True],
@@ -156,17 +156,17 @@ class UnpackIntAndAdvanceTestMethods(unittest.TestCase):
 
 class UnpackUtfAndAdvanceTestMethods(unittest.TestCase):
 	"""
-	Methods to test the BaseRead.unpack_utf() method.
+	Methods to test the BaseFileIn.unpack_utf() method.
 	"""
 	def setUp(self):
-		self.inputSignal = baseIO.BaseRead(TEST_READ_FILE)
+		self.inputSignal = baseIO.BaseFileIn(TEST_READ_FILE)
 	
 	def tearDown(self):
 		pass
 		
 	def test_unpack_value_with_correct_data(self):
 		"""
-		Tests the unpacked UTF-8 string value of BaseRead.unpack_utf()
+		Tests the unpacked UTF-8 string value of BaseFileIn.unpack_utf()
 		method.
 		"""
 		paramList = ['RIFF', 'WAVE', 'foo', 'bar', 'arandomstring']
@@ -184,8 +184,8 @@ class UnpackUtfAndAdvanceTestMethods(unittest.TestCase):
 
 	def test_readOffset_value_with_correct_data(self):
 		"""
-		Tests the BaseRead object's readOffset value after calling
-		BaseRead.unpack_utf() method.
+		Tests the BaseFileIn object's readOffset value after calling
+		BaseFileIn.unpack_utf() method.
 		"""
 		paramList = ['RIFF', 'WAVE', 'foo', 'bar', 'arandomstring']
 		
@@ -224,17 +224,17 @@ class UnpackUtfAndAdvanceTestMethods(unittest.TestCase):
 
 class ReadAndAssignTestMethods(unittest.TestCase):
 	"""
-	Methods to test the BaseRead.read_and_assign() method.
+	Methods to test the BaseFileIn.read_and_assign() method.
 	"""
 	def setUp(self):
-		self.inputSignal = baseIO.BaseRead(TEST_READ_FILE)
+		self.inputSignal = baseIO.BaseFileIn(TEST_READ_FILE)
 	
 	def tearDown(self):
 		pass
 	
 	def test_assign_utf(self):
 		"""
-		Test that BaseRead.read_and_assign() correctly reads and
+		Test that BaseFileIn.read_and_assign() correctly reads and
 		assigns UTF-8 strings of various length and endianness.
 		"""
 		paramNestedList = [
@@ -279,7 +279,7 @@ class ReadAndAssignTestMethods(unittest.TestCase):
 	
 	def test_assign_int(self):
 		"""
-		Test that BaseRead.read_and_assign() correctly reads and assigns
+		Test that BaseFileIn.read_and_assign() correctly reads and assigns
 		integers of various length, endianness, and signed/not-signed.
 		"""
 		paramNestedList = [
@@ -331,7 +331,7 @@ class ReadAndAssignTestMethods(unittest.TestCase):
 
 	def test_multiple_assignments(self):
 		"""
-		Test that BaseRead.read_and_assign() correctly reads and assigns
+		Test that BaseFileIn.read_and_assign() correctly reads and assigns
 		multiple values from a read.
 		"""
 		paramNestedList = [
@@ -439,7 +439,7 @@ class ReadAndAssignTestMethods(unittest.TestCase):
 		
 	def test_assign_past_read_len(self):
 		"""
-		Test that BaseRead.read_and_assign() all assignments past the
+		Test that BaseFileIn.read_and_assign() all assignments past the
 		read length are assigned as zero (numeric type) or '' (string type).
 		"""
 		paramNestedList = [

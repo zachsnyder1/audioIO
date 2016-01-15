@@ -31,18 +31,18 @@ class WavIOEngineInitTestMethods(unittest.TestCase):
 		"""
 		Test basic initialization of both read and write classes.
 		"""
-		readAudioObj = wavIO.ReadWav(TEST_READ_FILE)
-		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, 'float', 2, 32, 44100)
-		self.assertIsInstance(readAudioObj, wavIO.ReadWav)
-		self.assertIsInstance(writeAudioObj, wavIO.WriteWav)
+		readAudioObj = wavIO.WavIn(TEST_READ_FILE)
+		writeAudioObj = wavIO.WavOut(TEST_WRITE_FILE, 'float', 2, 32, 44100)
+		self.assertIsInstance(readAudioObj, wavIO.WavIn)
+		self.assertIsInstance(writeAudioObj, wavIO.WavOut)
 	
-	def test_WriteWav_conversion_init(self):
+	def test_WavOut_conversion_init(self):
 		"""
 		Test initialization of write class with conversion
 		parameters set to correct values.
 		"""
-		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, 'PCM', 2, 16, 44100)
-		self.assertIsInstance(writeAudioObj, wavIO.WriteWav)
+		writeAudioObj = wavIO.WavOut(TEST_WRITE_FILE, 'PCM', 2, 16, 44100)
+		self.assertIsInstance(writeAudioObj, wavIO.WavOut)
 		self.assertEqual(writeAudioObj.signalParams, {
 			baseIO.CORE_KEY_FMT: 'PCM',
 			baseIO.CORE_KEY_NUM_CHANNELS: 2,
@@ -55,15 +55,15 @@ class WavIOEngineInitTestMethods(unittest.TestCase):
 
 class WavInitHeaderTestMethods(unittest.TestCase):
 	"""
-	Methods to test the WriteWav.init_header() function.
+	Methods to test the WavOut.init_header() function.
 	"""
 	def test_valid_conversion_parameters_PCM(self):
 		"""
 		Test with valid conversion parameters, converting to a PCM file.
 		"""
-		readAudioObj = wavIO.ReadWav(TEST_READ_FILE)
+		readAudioObj = wavIO.WavIn(TEST_READ_FILE)
 		reachBack = 0
-		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, 'PCM', 2, 16, 44100)
+		writeAudioObj = wavIO.WavOut(TEST_WRITE_FILE, 'PCM', 2, 16, 44100)
 		
 		readAudioObj.signalParams[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = 100
 		writeAudioObj.init_header(readAudioObj, reachBack)
@@ -94,9 +94,9 @@ class WavInitHeaderTestMethods(unittest.TestCase):
 		"""
 		Test with valid conversion parameters, converting to a float file.
 		"""
-		readAudioObj = wavIO.ReadWav(TEST_READ_FILE)
+		readAudioObj = wavIO.WavIn(TEST_READ_FILE)
 		reachBack = 0
-		writeAudioObj = wavIO.WriteWav(TEST_WRITE_FILE, 'float', 2, 32, 44100)
+		writeAudioObj = wavIO.WavOut(TEST_WRITE_FILE, 'float', 2, 32, 44100)
 		
 		readAudioObj.signalParams[baseIO.CORE_KEY_SAMPLES_PER_CHANNEL] = 100
 		writeAudioObj.init_header(readAudioObj, reachBack)

@@ -553,7 +553,7 @@ class ReachBackTestMethods(unittest.TestCase):
 	
 	def test_wav_size_adjustment(self):
 		"""
-		Test that WriteWav.init_header() function properly
+		Test that WavOut.init_header() function properly
 		augments the RIFF chunk size and Data subchunk size
 		according to the reachBack size.
 		"""

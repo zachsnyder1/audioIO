@@ -1,8 +1,8 @@
 """
 This module contains concrete classes that implement methods for 
 reading, unpacking, [re]packing, and writing sample data to and 
-from .WAV files. The concrete classes ReadWav and WriteWav 
-inherit from the abstract base_io.BaseRead and base_io.BaseWrite 
+from .WAV files. The concrete classes WavIn and WavOut 
+inherit from the abstract base_io.BaseFileIn and base_io.BaseFileOut 
 classes, respectively, and from WavBase, which contains  
 methods specific to .WAV files. Not all .WAV files are covered. This 
 module currently only supports 8- and 16-bit PCM and 32- 
@@ -76,7 +76,7 @@ WAV_FMT_EXTENSIBLE = 61183 # Extensible format
 class WavBase:
 	"""
 	WAV base class.  Holds important methods that are
-	inherited into ReadWav and WriteWav classes.
+	inherited into WavIn and WavOut classes.
 	"""
 	def init_struct_fmt_str(self):
 		"""
@@ -121,10 +121,10 @@ class WavBase:
 
 
 
-class ReadWav(baseIO.BaseRead, WavBase):
+class WavIn(baseIO.BaseFileIn, WavBase):
 	"""
 	The concrete class that implements methods for reading .WAV audio files. 
-	Inherits from both baseIO.BaseRead and WavBase.
+	Inherits from both baseIO.BaseFileIn and WavBase.
 	"""
 	# ------------------------------------------------------------------------
 	# -------------------------------- OVERRIDES -----------------------------
@@ -132,7 +132,7 @@ class ReadWav(baseIO.BaseRead, WavBase):
 	def read_header(self, readStream):
 		"""
 		An implementation, specifically for .WAV files, of the abstract 
-		operation declared in baseIO.BaseRead. This method is called in 
+		operation declared in baseIO.BaseFileIn. This method is called in 
 		Engine.process(), and populates the signalParams with values read
 		from the header of the input file.
 		
@@ -276,10 +276,10 @@ class ReadWav(baseIO.BaseRead, WavBase):
 
 
 
-class WriteWav(baseIO.BaseWrite, WavBase):
+class WavOut(baseIO.BaseFileOut, WavBase):
 	"""
 	The concrete class that implements methods for writing .WAV audio files. 
-	Inherits from both baseIO.BaseWrite and WavBase.
+	Inherits from both baseIO.BaseFileOut and WavBase.
 	"""
 	# ------------------------------------------------------------------------
 	# -------------------------------- OVERRIDES -----------------------------
