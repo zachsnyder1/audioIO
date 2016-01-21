@@ -1,11 +1,15 @@
-# audioIO
+# signalhook
 Read audio from file, expose to a custom plugin algorithm, rewrite processed audio to file.
 
 ## What?
 
-A python3 package that aims to provide a simple interface for applying a custom audio
-processing algorithm to an audio file.  In its present, nascent form it only works for
-8- and 16--bit PCM and 32- and 64-bit floating point .WAV files.  More to come.
+A developing python3 framework for exposing a discrete-time signal to a custom 
+processing or analyzing plugin. Currently, 'signal' means sample data read from 
+and written to file, although the goal is to eventually implement the same 
+functionality for real-time data being read from and written to ring buffers. 
+In its present, nascent form it only works for 8- and 16-bit PCM and 32- and 
+64-bit floating point .WAV audio files. Much more to come.
+
 
 ## Why?
 
@@ -16,45 +20,37 @@ stage.  Why not keep it simple for now?
 ## How?
 
 ```python
-from audioIO.src.framework import engine
+# Everything you will need here is located in the engine module.  Don't forget
+# to install the signalhook package first (see Installation section...)
+from signalhook import engine
 
-def my_algorithm(engineObj, sampleNestedList):
-  # Do something with the samples...
-	return processedSampleNestedList
+# Define your plugin callback function:
+def my_plugin(engObj, sampleNestedList):
+	# Do something with the samples...
+	return sampleNestedList
 
-options = {
-	engine.OUTPUT_FMT: 'float',
-	engine.OUTPUT_BIT_DEPTH: 32
-}
+# Set some options:
+optionsDict = {
+	# present the plugin with
+	# floating point samples:
+	engine.PLUGIN_FMT: 'float',
 	
-processor = engine.FileToFileEngine('readFile.wav', 
-									'writeFile.wav', 
-                                    algorithm=my_algorithm, 
-                                    options=options)
-processor.process()
+	# write the output file
+	# as PCM data:
+	engine.OUTPUT_FMT: 'PCM'
+}
+
+# Instantiate an engine:
+engObj = engine.FileToFileEngine(
+	'path/to/input.wav',
+	'path/to/output.wav',
+	algorithm=my_plugin,
+	options=optionsDict
+)
+
+# Initiate the signal processing:
+engObj.process()
 ```
-
-Your effect callback accepts:
-
-- *engineObj*		 ==>  Pointer to the Engine object.  Allows you access to meta info from the header of the read file, as well as to a convenient and simple helper API.
-- *sampleNestedList* ==>  A nested list of sample values read from each buffer.  Each item is itself a list, which contains the sample value of each channel at that point in time.  The actual value of each sample can be either an integer or a float, depending on how you set the format of the Plugin object upon init.  For example:
-
-<dl>
-	<dd>                        
-&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp[[channel1, channel2], [channel1, channel2], etc...]<br>
-                            
-&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspi.e.<br>
-                                    
-&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp[[-0.8, -0.7], [-0.2, -0.15], etc...]<br><br>
-	</dd>
-</dl>
-                        
-
-Your effect callback returns:
-
-- *processedSampleNestedList*  ==>  The nested list of processed samples.
-
-Your effect callback is called once each time a new buffer is read from file.
 
 ##Testing?
 
