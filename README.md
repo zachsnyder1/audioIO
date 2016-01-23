@@ -1,4 +1,4 @@
-# signalhook
+# SignalHook
 Read audio from file, expose to a custom plugin algorithm, rewrite processed audio to file.
 
 ## What?
