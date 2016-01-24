@@ -9,3 +9,4 @@ and 16-bit PCM and 32- and 64-bit floating point .WAV audio files. Much more
 to come.
 
 View the official [documentation](https://zach-site.com/projects/1/SignalHook/)!
+
